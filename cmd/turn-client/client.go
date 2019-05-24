@@ -10,8 +10,6 @@ import (
 	"github.com/pion/turnc"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-
-	"github.com/gortc/turn"
 )
 
 var (
