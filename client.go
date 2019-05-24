@@ -2,22 +2,22 @@ package turnc
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"sync"
 	"time"
 
 	"github.com/gortc/turn"
+
+	"github.com/pion/logging"
 	"github.com/pion/stun"
-	"go.uber.org/zap"
 )
 
 // Client for TURN server.
 //
 // Provides transparent net.Conn interfaces to remote peers.
 type Client struct {
-	log         *zap.Logger
+	log         logging.LeveledLogger
 	con         net.Conn
 	stun        STUNClient
 	mux         sync.RWMutex
@@ -32,8 +32,8 @@ type Client struct {
 // Options contains available config for TURN  client.
 type Options struct {
 	Conn net.Conn
-	STUN STUNClient  // optional STUN client
-	Log  *zap.Logger // defaults to Nop
+	STUN STUNClient            // optional STUN client
+	Log  logging.LeveledLogger // defaults to Nop
 
 	// Long-term integrity.
 	Username string
@@ -59,7 +59,7 @@ func New(o Options) (*Client, error) {
 		return nil, errors.New("connection not provided")
 	}
 	if o.Log == nil {
-		o.Log = zap.NewNop()
+		o.Log = nopLogger{}
 	}
 	c := &Client{
 		password: o.Password,
@@ -67,7 +67,7 @@ func New(o Options) (*Client, error) {
 	}
 	if o.STUN == nil {
 		// Setting up de-multiplexing.
-		m := newMultiplexer(o.Conn, c.log.Named("multiplexer"))
+		m := newMultiplexer(o.Conn, c.log)
 		go m.discardData() // discarding any non-stun/turn data
 		o.Conn = bypassWriter{
 			reader: m.turnL,
@@ -129,7 +129,7 @@ func (c *Client) stunHandler(e stun.Event) {
 		addr turn.PeerAddress
 	)
 	if err := e.Message.Parse(&data, &addr); err != nil {
-		c.log.Error("failed to parse while handling incoming STUN message", zap.Error(err))
+		c.log.Errorf("failed to parse while handling incoming STUN message: %v", err)
 		return
 	}
 	c.mux.RLock()
@@ -138,26 +138,21 @@ func (c *Client) stunHandler(e stun.Event) {
 			continue
 		}
 		if _, err := c.alloc.perms[i].peerL.Write(data); err != nil {
-			c.log.Error("failed to write", zap.Error(err))
+			c.log.Errorf("failed to write: %v", err)
 		}
 	}
 	c.mux.RUnlock()
 }
 
-// ZapChannelNumber returns zap.Field for ChannelNumber.
-func ZapChannelNumber(key string, v turn.ChannelNumber) zap.Field {
-	return zap.String(key, fmt.Sprintf("0x%x", int(v)))
-}
-
 func (c *Client) handleChannelData(data *turn.ChannelData) {
-	c.log.Debug("handleChannelData", ZapChannelNumber("number", data.Number))
+	c.log.Debugf("handleChannelData: 0x%x", int(data.Number))
 	c.mux.RLock()
 	for i := range c.alloc.perms {
 		if data.Number != c.alloc.perms[i].Binding() {
 			continue
 		}
 		if _, err := c.alloc.perms[i].peerL.Write(data.Data); err != nil {
-			c.log.Error("failed to write", zap.Error(err))
+			c.log.Errorf("failed to write: %v", err)
 		}
 	}
 	c.mux.RUnlock()
@@ -171,7 +166,7 @@ func (c *Client) readUntilClosed() {
 			if err == io.EOF {
 				continue
 			}
-			c.log.Error("read failed", zap.Error(err))
+			c.log.Errorf("read failed: %v", err)
 			break
 		}
 		data := buf[:n]

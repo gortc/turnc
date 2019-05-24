@@ -3,15 +3,16 @@ package testutil
 import (
 	"testing"
 
-	"go.uber.org/zap/zapcore"
-	"go.uber.org/zap/zaptest/observer"
+	"github.com/pion/logging"
 )
 
 // EnsureNoErrors errors if logs contain any error message.
-func EnsureNoErrors(t *testing.T, logs *observer.ObservedLogs) {
+func EnsureNoErrors(t *testing.T, logs *Observer) {
 	t.Helper()
-	for _, e := range logs.TakeAll() {
-		if e.Level == zapcore.ErrorLevel {
+	logs.Lock()
+	defer logs.Unlock()
+	for _, e := range logs.Messages {
+		if e.Level == logging.LogLevelError {
 			t.Error(e.Message)
 		}
 	}

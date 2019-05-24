@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/gortc/turn"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	"go.uber.org/zap/zaptest/observer"
+
+	"github.com/pion/logging"
 
 	"github.com/pion/stun"
 	"github.com/pion/turnc/internal/testutil"
@@ -243,12 +243,11 @@ func testPipe(t *testing.T, lName, rName string) (net.Conn, net.Conn) {
 }
 
 func TestClientMultiplexed(t *testing.T) {
-	core, logs := observer.New(zapcore.DebugLevel)
-	logger := zap.New(core)
+	logs := &testutil.Observer{Level: logging.LogLevelDebug}
 	connL, connR := testPipe(t, "server", "client")
 	timeout := time.Second * 10
 	c, createErr := New(Options{
-		Log:          logger,
+		Log:          logs,
 		Conn:         connR,
 		RTO:          timeout,
 		NoRetransmit: true,
@@ -433,14 +432,13 @@ func mustClose(t *testing.T, closer io.Closer) {
 }
 
 func TestClient_STUNHandler(t *testing.T) {
-	core, logs := observer.New(zapcore.DebugLevel)
-	logger := zap.New(core)
+	logs := &testutil.Observer{Level: logging.LogLevelDebug}
 	connL, connR := testPipe(t, "server", "client")
 	defer mustClose(t, connL)
 	defer mustClose(t, connR)
 	timeout := time.Second * 10
 	c, createErr := New(Options{
-		Log:          logger,
+		Log:          logs,
 		Conn:         connR,
 		RTO:          timeout,
 		NoRetransmit: true,
@@ -466,10 +464,10 @@ func TestClient_STUNHandler(t *testing.T) {
 		})
 		found := false
 		for _, l := range logs.All() {
-			if l.Level != zapcore.ErrorLevel {
+			if l.Level != logging.LogLevelError {
 				continue
 			}
-			if l.Message != "failed to parse while handling incoming STUN message" {
+			if !strings.Contains(l.Message, "failed to parse while handling incoming STUN message") {
 				t.Errorf("unexpected message: %s", l.Message)
 			} else {
 				found = true
@@ -481,12 +479,11 @@ func TestClient_STUNHandler(t *testing.T) {
 	})
 	t.Run("WriteErr", func(t *testing.T) {
 		stunClient := &testSTUN{}
-		core, logs = observer.New(zapcore.DebugLevel)
-		logger := zap.New(core)
+		logs := &testutil.Observer{Level: logging.LogLevelError}
 		connL, connR = testPipe(t, "server", "client")
 		timeout := time.Second * 10
 		c, createErr = New(Options{
-			Log:          logger,
+			Log:          logs,
 			Conn:         connR,
 			RTO:          timeout,
 			NoRetransmit: true,
@@ -555,10 +552,10 @@ func TestClient_STUNHandler(t *testing.T) {
 		})
 		found := false
 		for _, l := range logs.All() {
-			if l.Level != zapcore.ErrorLevel {
+			if l.Level != logging.LogLevelError {
 				continue
 			}
-			if l.Message != "failed to write" {
+			if !strings.HasPrefix(l.Message, "failed to write") {
 				t.Errorf("unexpected message: %s", l.Message)
 			} else {
 				found = true
@@ -567,7 +564,6 @@ func TestClient_STUNHandler(t *testing.T) {
 		if !found {
 			t.Error("expected error message not found")
 		}
-
 	})
 }
 

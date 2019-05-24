@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	"go.uber.org/zap/zaptest/observer"
+	"github.com/pion/logging"
+
+	"github.com/pion/turnc/internal/testutil"
 )
 
 type closeFunc func() error
@@ -25,9 +25,8 @@ func (f readFunc) Read(buf []byte) (int, error) {
 
 func TestMultiplexer(t *testing.T) {
 	t.Run("closeLogged", func(t *testing.T) {
-		core, logs := observer.New(zapcore.ErrorLevel)
-		logger := zap.New(core)
-		closeLogged(logger, "message", closeFunc(func() error {
+		logs := &testutil.Observer{Level: logging.LogLevelError}
+		closeLogged(logs, "message", closeFunc(func() error {
 			return io.ErrUnexpectedEOF
 		}))
 		if logs.Len() < 1 {
@@ -35,9 +34,8 @@ func TestMultiplexer(t *testing.T) {
 		}
 	})
 	t.Run("discardLogged", func(t *testing.T) {
-		core, logs := observer.New(zapcore.ErrorLevel)
-		logger := zap.New(core)
-		discardLogged(logger, "message", readFunc(func(buf []byte) (int, error) {
+		logs := &testutil.Observer{Level: logging.LogLevelError}
+		discardLogged(logs, "message", readFunc(func(buf []byte) (int, error) {
 			return 0, io.ErrUnexpectedEOF
 		}))
 		if logs.Len() < 1 {
@@ -45,10 +43,9 @@ func TestMultiplexer(t *testing.T) {
 		}
 	})
 	t.Run("AppData", func(t *testing.T) {
-		core, logs := observer.New(zapcore.ErrorLevel)
-		logger := zap.New(core)
+		logs := &testutil.Observer{Level: logging.LogLevelError}
 		connL, connR := net.Pipe()
-		m := newMultiplexer(connR, logger)
+		m := newMultiplexer(connR, logs)
 		go func() {
 			if err := connL.SetWriteDeadline(time.Now().Add(time.Second)); err != nil {
 				t.Error(err)
@@ -66,10 +63,9 @@ func TestMultiplexer(t *testing.T) {
 		}
 	})
 	t.Run("Write error", func(t *testing.T) {
-		core, logs := observer.New(zapcore.WarnLevel)
-		logger := zap.New(core)
+		logs := &testutil.Observer{Level: logging.LogLevelWarn}
 		connL, connR := net.Pipe()
-		m := newMultiplexer(connR, logger)
+		m := newMultiplexer(connR, logs)
 		if err := m.dataR.Close(); err != nil {
 			t.Error(err)
 		}

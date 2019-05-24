@@ -7,13 +7,14 @@ import (
 	"net"
 
 	"github.com/gortc/turn"
+
+	"github.com/pion/logging"
 	"github.com/pion/stun"
-	"go.uber.org/zap"
 )
 
 // Allocation reflects TURN Allocation.
 type Allocation struct {
-	log       *zap.Logger
+	log       logging.LeveledLogger
 	client    *Client
 	relayed   turn.RelayedAddress
 	reflexive stun.XORMappedAddress
@@ -62,7 +63,7 @@ func (c *Client) allocate(req, res *stun.Message) (*Allocation, error) {
 		}
 		a := &Allocation{
 			client:    c,
-			log:       c.log.Named("allocation"),
+			log:       c.log,
 			reflexive: reflexive,
 			relayed:   relayed,
 			minBound:  turn.MinChannelNumber,
@@ -119,7 +120,7 @@ func (c *Client) Allocate() (*Allocation, error) {
 	c.integrity = stun.NewLongTermIntegrity(
 		c.username.String(), c.realm.String(), c.password,
 	)
-	// Trying to authorise.
+	// Trying to authorize.
 	if reqErr = req.Build(stun.TransactionID,
 		turn.AllocateRequest, turn.RequestedTransportUDP,
 		&c.username, &c.realm,
@@ -187,7 +188,7 @@ func (a *Allocation) CreateUDP(addr *net.UDPAddr) (*Permission, error) {
 		return nil, err
 	}
 	p := &Permission{
-		log:         a.log.Named("permission"),
+		log:         a.log,
 		peerAddr:    peer,
 		client:      a.client,
 		refreshRate: a.client.refreshRate,

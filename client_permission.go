@@ -9,14 +9,15 @@ import (
 	"time"
 
 	"github.com/gortc/turn"
-	"go.uber.org/zap"
+
+	"github.com/pion/logging"
 
 	"github.com/pion/stun"
 )
 
 // Permission implements net.PacketConn.
 type Permission struct {
-	log          *zap.Logger
+	log          logging.LeveledLogger
 	mux          sync.RWMutex
 	number       turn.ChannelNumber
 	peerAddr     turn.PeerAddress
@@ -80,7 +81,7 @@ func (p *Permission) startLoop(f func()) {
 func (p *Permission) startRefreshLoop() {
 	p.startLoop(func() {
 		if err := p.refresh(); err != nil {
-			p.log.Error("failed to refresh permission", zap.Error(err))
+			p.log.Errorf("failed to refresh permission: %v", err)
 		}
 		p.log.Debug("permission refreshed")
 	})
@@ -149,7 +150,7 @@ func (p *Permission) Bind() error {
 	p.number = n
 	p.startLoop(func() {
 		if err := p.refreshBind(); err != nil {
-			p.log.Error("failed to refresh bind", zap.Error(err))
+			p.log.Errorf("failed to refresh bind: %v", err)
 		}
 	})
 	return nil
@@ -160,14 +161,10 @@ func (p *Permission) Bind() error {
 // If permission is bound, the ChannelData message will be used.
 func (p *Permission) Write(b []byte) (n int, err error) {
 	if n := p.Binding(); n.Valid() {
-		if ce := p.log.Check(zap.DebugLevel, "using channel data to write"); ce != nil {
-			ce.Write()
-		}
+		p.log.Debug("using channel data to write")
 		return p.client.sendChan(b, n)
 	}
-	if ce := p.log.Check(zap.DebugLevel, "using STUN to write"); ce != nil {
-		ce.Write()
-	}
+	p.log.Debug("using STUN to write")
 	return p.client.sendData(b, &p.peerAddr)
 }
 

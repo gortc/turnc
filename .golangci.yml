@@ -17,7 +17,7 @@ linters-settings:
   lll:
     line-length: 140
   goimports:
-    local-prefixes: github.com/gortc
+    local-prefixes: github.com/pion
   gocritic:
     enabled-tags:
       - performance
@@ -30,6 +30,7 @@ linters-settings:
 issues:
   exclude:
     - "`assertHMACSize` - `blocksize` always receives `64`"
+    - "hugeParam: o is heavy"
   exclude-rules:
     - text: "string `<nil>`"
       linters:
@@ -43,6 +44,10 @@ issues:
         - dupl
         - gosec
         - goconst
+
+    - path: client\.go
+      linters:
+        - maligned
 
     # Ease some gocritic warnings on test files.
     - path: testutil\.go
@@ -89,6 +94,7 @@ linters:
     - gochecknoglobals
     - scopelint
     - dupl
+    - interfacer
 
 run:
   skip-dirs:

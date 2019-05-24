@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"time"
 
+	"github.com/pion/logging"
 	"github.com/pion/turnc"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 var (
@@ -27,51 +25,36 @@ var (
 
 func main() {
 	flag.Parse()
-	logCfg := zap.NewDevelopmentConfig()
-	logCfg.DisableCaller = true
-	logCfg.DisableStacktrace = true
-	start := time.Now()
-	logCfg.EncoderConfig.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-		d := int64(time.Since(start).Nanoseconds() / 1e6)
-		enc.AppendString(fmt.Sprintf("%04d", d))
-	}
-	logger, err := logCfg.Build()
-	if err != nil {
-		panic(err)
-	}
+	lf := logging.NewDefaultLoggerFactory()
+	logger := lf.NewLogger("test")
 	if flag.Arg(0) == "peer" {
 		_, port, err := net.SplitHostPort(*peer)
 		logger.Info("running in peer mode")
 		if err != nil {
-			logger.Fatal("failed to find port in peer address", zap.Error(err))
+			panic(err)
 		}
 		laddr, err := net.ResolveUDPAddr("udp", ":"+port)
 		if err != nil {
-			logger.Fatal("failed to resolve UDP addr", zap.Error(err))
+			panic(err)
 		}
 		c, err := net.ListenUDP("udp", laddr)
 		if err != nil {
-			logger.Fatal("failed to listen", zap.Error(err))
+			panic(err)
 		}
-		logger.Info("listening as echo server", zap.Stringer("laddr", c.LocalAddr()))
+		logger.Infof("listening as echo server %s", c.LocalAddr())
 		for {
 			// Starting echo server.
 			buf := make([]byte, 1024)
 			n, addr, err := c.ReadFromUDP(buf)
 			if err != nil {
-				logger.Fatal("failed to read", zap.Error(err))
+				panic(err)
 			}
-			logger.Info("got message",
-				zap.String("body", string(buf[:n])),
-				zap.Stringer("raddr", addr),
-			)
+			logger.Infof("got message: [%s] %s", addr, buf[:n])
 			// Echoing back.
 			if _, err := c.WriteToUDP(buf[:n], addr); err != nil {
-				logger.Fatal("failed to write back", zap.Error(err))
+				panic(err)
 			}
-			logger.Info("echoed back",
-				zap.Stringer("raddr", addr),
-			)
+			logger.Infof("echoed back [%s]", addr)
 		}
 	}
 	if *password == "" {
@@ -82,20 +65,13 @@ func main() {
 	// Resolving to TURN server.
 	raddr, err := net.ResolveUDPAddr("udp", *server)
 	if err != nil {
-		logger.Fatal("failed to resolve TURN server",
-			zap.Error(err),
-		)
+		panic(err)
 	}
 	c, err := net.DialUDP("udp", nil, raddr)
 	if err != nil {
-		logger.Fatal("failed to dial to TURN server",
-			zap.Error(err),
-		)
+		panic(err)
 	}
-	logger.Info("dial server",
-		zap.Stringer("laddr", c.LocalAddr()),
-		zap.Stringer("raddr", c.RemoteAddr()),
-	)
+	logger.Infof("dial server %s -> %s", c.LocalAddr(), c.RemoteAddr())
 	client, clientErr := turnc.New(turnc.Options{
 		Log:      logger,
 		Conn:     c,
@@ -103,28 +79,28 @@ func main() {
 		Password: *password,
 	})
 	if clientErr != nil {
-		logger.Fatal("failed to init client", zap.Error(clientErr))
+		panic(clientErr)
 	}
 	a, allocErr := client.Allocate()
 	if allocErr != nil {
-		logger.Fatal("failed to allocate", zap.Error(allocErr))
+		panic(allocErr)
 	}
 	logger.Info("allocated")
 	peerAddr, resolveErr := net.ResolveUDPAddr("udp", *peer)
 	if resolveErr != nil {
-		logger.Fatal("failed to resolve:", zap.Error(resolveErr))
+		panic(resolveErr)
 	}
 	permission, createErr := a.Create(peerAddr)
 	if createErr != nil {
-		logger.Fatal("failed to create permission:", zap.Error(resolveErr))
+		panic(createErr)
 	}
 	if _, writeRrr := fmt.Fprint(permission, "hello world!"); writeRrr != nil {
-		logger.Fatal("failed to write", zap.Error(writeRrr))
+		panic(writeRrr)
 	}
 	buf := make([]byte, 1500)
 	n, readErr := permission.Read(buf)
 	if readErr != nil {
-		logger.Fatal("failed to read:", zap.Error(readErr))
+		panic(readErr)
 	}
-	logger.Info("got message", zap.String("body", string(buf[:n])))
+	logger.Infof("got message: %s", string(buf[:n]))
 }

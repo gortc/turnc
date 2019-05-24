@@ -5,13 +5,13 @@ import (
 	"flag"
 	"fmt"
 	"net"
+	"os"
 	"time"
 
-	"github.com/pion/turnc"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-
 	"github.com/gortc/turn"
+
+	"github.com/pion/logging"
+	"github.com/pion/turnc"
 )
 
 const (
@@ -37,56 +37,36 @@ func resolve(host string, port int) *net.UDPAddr {
 	panic(resolveErr)
 }
 
-func newLogger() *zap.Logger {
-	logCfg := zap.NewDevelopmentConfig()
-	logCfg.DisableCaller = true
-	logCfg.DisableStacktrace = true
-	start := time.Now()
-	logCfg.EncoderConfig.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
-		d := int64(time.Since(start).Nanoseconds() / 1e6)
-		enc.AppendString(fmt.Sprintf("%04d", d))
-	}
-	logger, err := logCfg.Build()
-	if err != nil {
-		panic(err)
-	}
-	return logger
-}
-
-func runPeer(logger *zap.Logger) {
+func runPeer(logger logging.LeveledLogger) {
 	laddr, err := net.ResolveUDPAddr(udp, fmt.Sprintf(":%d", peerPort))
 	if err != nil {
-		logger.Fatal("failed to resolve UDP addr", zap.Error(err))
+		panic(fmt.Sprintf("failed to resolve UDP addr: %v", err))
 	}
 	c, err := net.ListenUDP(udp, laddr)
 	if err != nil {
-		logger.Fatal("failed to listen", zap.Error(err))
+		panic(fmt.Sprintf("failed to listen: %v", err))
 	}
-	logger.Info("listening as echo server", zap.Stringer("laddr", c.LocalAddr()))
+	logger.Infof("listening as echo server at %d", c.LocalAddr())
 	for {
 		// Starting echo server.
 		buf := make([]byte, 1024)
 		n, addr, err := c.ReadFromUDP(buf)
 		if err != nil {
-			logger.Fatal("failed to read", zap.Error(err))
+			panic(fmt.Sprintf("failed to read: %v", err))
 		}
-		logger.Info("got message",
-			zap.String("body", string(buf[:n])),
-			zap.Stringer("raddr", addr),
-		)
+		logger.Infof("got message: body %s; raddr: %s", string(buf[:n]), addr)
 		// Echoing back.
 		if _, err := c.WriteToUDP(buf[:n], addr); err != nil {
-			logger.Fatal("failed to write back", zap.Error(err))
+			panic(fmt.Sprintf("failed to write back: %v", err))
 		}
-		logger.Info("echoed back",
-			zap.Stringer("raddr", addr),
-		)
+		logger.Infof("echoed back to %d", addr)
 	}
 }
 
 func main() {
 	flag.Parse()
-	logger := newLogger()
+	lf := logging.NewDefaultLoggerFactory()
+	logger := lf.NewLogger("test")
 	if flag.Arg(0) == "peer" {
 		runPeer(logger)
 	}
@@ -98,64 +78,59 @@ func main() {
 	// Creating connection from client to server.
 	c, err := net.DialUDP(udp, nil, serverAddr)
 	if err != nil {
-		logger.Fatal("failed to dial to TURN server", zap.Error(err))
+		logger.Errorf("failed to dial to TURN server: %v", err)
+		os.Exit(2)
 	}
-	logger.Info("dialed server",
-		zap.Stringer("laddr", c.LocalAddr()),
-		zap.Stringer("raddr", c.RemoteAddr()),
-		zap.Stringer("peer", echoAddr),
-	)
+	logger.Infof("dialed server: laddr=%s raddr=%s peer=%s", c.LocalAddr(), c.RemoteAddr(), echoAddr)
 	client, err := turnc.New(turnc.Options{
-		Log:      logger.Named("client"),
+		Log:      logger,
 		Conn:     c,
 		Username: "user",
 		Password: "secret",
 	})
 	if err != nil {
-		logger.Fatal("failed to create client", zap.Error(err))
+		panic(fmt.Sprintf("failed to create client: %v", err))
 	}
 	a, err := client.Allocate()
 	if err != nil {
-		logger.Fatal("failed to create allocation", zap.Error(err))
+		panic(fmt.Sprintf("failed to create allocation: %v", err))
 	}
 	p, err := a.Create(echoAddr)
 	if err != nil {
-		logger.Fatal("failed to create permission", zap.Error(err))
+		panic(fmt.Sprintf("failed to create permission: %v", err))
 	}
 	// Sending and receiving "hello" message.
 	if _, err := fmt.Fprint(p, "hello"); err != nil {
-		logger.Fatal("failed to write data")
+		panic(fmt.Sprintf("failed to write data"))
 	}
 	sent := []byte("hello")
 	got := make([]byte, len(sent))
 	if _, err = p.Read(got); err != nil {
-		logger.Fatal("failed to read data", zap.Error(err))
+		panic(fmt.Sprintf("failed to read data: %v", err))
 	}
 	if !bytes.Equal(got, sent) {
-		logger.Fatal("got incorrect data")
+		panic(fmt.Sprintf("got incorrect data"))
 	}
 	// Repeating via channel binding.
 	for i := range got {
 		got[i] = 0
 	}
 	if bindErr := p.Bind(); bindErr != nil {
-		logger.Fatal("failed to bind", zap.Error(err))
+		panic(fmt.Sprintf("failed to bind: %v", err))
 	}
 	if !p.Bound() {
-		logger.Fatal("should be bound")
+		panic(fmt.Sprintf("should be bound"))
 	}
-	logger.Info("bound to channel",
-		turnc.ZapChannelNumber("number", p.Binding()),
-	)
+	logger.Infof("bound to channel 0x%x", int(p.Binding()))
 	// Sending and receiving "hello" message.
 	if _, err := fmt.Fprint(p, "hello"); err != nil {
-		logger.Fatal("failed to write data")
+		panic(fmt.Sprintf("failed to write data"))
 	}
 	if _, err = p.Read(got); err != nil {
-		logger.Fatal("failed to read data", zap.Error(err))
+		panic(fmt.Sprintf("failed to read data: %v", err))
 	}
 	if !bytes.Equal(got, sent) {
-		logger.Fatal("got incorrect data")
+		panic(fmt.Sprintf("got incorrect data"))
 	}
 	logger.Info("closing")
 }
