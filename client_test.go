@@ -30,7 +30,7 @@ func (t testSTUN) Do(m *stun.Message, f func(e stun.Event)) error { return t.do(
 
 func TestNewClient(t *testing.T) {
 	t.Run("NoConn", func(t *testing.T) {
-		c, createErr := NewClient(ClientOptions{})
+		c, createErr := New(Options{})
 		if createErr == nil {
 			t.Error("should error")
 		}
@@ -40,7 +40,7 @@ func TestNewClient(t *testing.T) {
 	})
 	t.Run("Simple", func(t *testing.T) {
 		connL, connR := net.Pipe()
-		c, createErr := NewClient(ClientOptions{
+		c, createErr := New(Options{
 			Conn: connR,
 		})
 		if createErr != nil {
@@ -55,7 +55,7 @@ func TestNewClient(t *testing.T) {
 	t.Run("RefreshRate", func(t *testing.T) {
 		t.Run("Default", func(t *testing.T) {
 			connL, connR := net.Pipe()
-			c, createErr := NewClient(ClientOptions{
+			c, createErr := New(Options{
 				Conn: connR,
 			})
 			if createErr != nil {
@@ -72,7 +72,7 @@ func TestNewClient(t *testing.T) {
 		})
 		t.Run("Disabled", func(t *testing.T) {
 			connL, connR := net.Pipe()
-			c, createErr := NewClient(ClientOptions{
+			c, createErr := New(Options{
 				RefreshDisabled: true,
 				Conn:            connR,
 			})
@@ -90,7 +90,7 @@ func TestNewClient(t *testing.T) {
 		})
 		t.Run("Custom", func(t *testing.T) {
 			connL, connR := net.Pipe()
-			c, createErr := NewClient(ClientOptions{
+			c, createErr := New(Options{
 				RefreshRate: time.Second,
 				Conn:        connR,
 			})
@@ -247,7 +247,7 @@ func TestClientMultiplexed(t *testing.T) {
 	logger := zap.New(core)
 	connL, connR := testPipe(t, "server", "client")
 	timeout := time.Second * 10
-	c, createErr := NewClient(ClientOptions{
+	c, createErr := New(Options{
 		Log:          logger,
 		Conn:         connR,
 		RTO:          timeout,
@@ -439,7 +439,7 @@ func TestClient_STUNHandler(t *testing.T) {
 	defer mustClose(t, connL)
 	defer mustClose(t, connR)
 	timeout := time.Second * 10
-	c, createErr := NewClient(ClientOptions{
+	c, createErr := New(Options{
 		Log:          logger,
 		Conn:         connR,
 		RTO:          timeout,
@@ -485,7 +485,7 @@ func TestClient_STUNHandler(t *testing.T) {
 		logger := zap.New(core)
 		connL, connR = testPipe(t, "server", "client")
 		timeout := time.Second * 10
-		c, createErr = NewClient(ClientOptions{
+		c, createErr = New(Options{
 			Log:          logger,
 			Conn:         connR,
 			RTO:          timeout,
@@ -573,7 +573,7 @@ func TestClient_STUNHandler(t *testing.T) {
 
 func TestClient_sendChan(t *testing.T) {
 	connL, connR := net.Pipe()
-	c, createErr := NewClient(ClientOptions{
+	c, createErr := New(Options{
 		Conn: connR,
 	})
 	if createErr != nil {
@@ -595,7 +595,7 @@ func TestClient_sendChan(t *testing.T) {
 func TestClient_do(t *testing.T) {
 	connL, connR := net.Pipe()
 	stunClient := &testSTUN{}
-	c, createErr := NewClient(ClientOptions{
+	c, createErr := New(Options{
 		STUN: stunClient,
 		Conn: connR,
 	})

@@ -22,7 +22,7 @@ func TestClient_Allocate(t *testing.T) {
 		logger := zap.New(core)
 		connL, connR := net.Pipe()
 		stunClient := &testSTUN{}
-		c, createErr := NewClient(ClientOptions{
+		c, createErr := New(Options{
 			Log:  logger,
 			Conn: connR, // should not be used
 			STUN: stunClient,
@@ -347,7 +347,7 @@ func TestClient_Allocate(t *testing.T) {
 		connL, connR := net.Pipe()
 		connL.Close()
 		stunClient := &testSTUN{}
-		c, createErr := NewClient(ClientOptions{
+		c, createErr := New(Options{
 			Log:  logger,
 			Conn: connR, // should not be used
 			STUN: stunClient,

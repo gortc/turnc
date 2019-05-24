@@ -29,8 +29,8 @@ type Client struct {
 	refreshRate time.Duration
 }
 
-// ClientOptions contains available config for TURN  client.
-type ClientOptions struct {
+// Options contains available config for TURN  client.
+type Options struct {
 	Conn net.Conn
 	STUN STUNClient  // optional STUN client
 	Log  *zap.Logger // defaults to Nop
@@ -53,8 +53,8 @@ func (c *Client) RefreshRate() time.Duration { return c.refreshRate }
 
 const defaultRefreshRate = time.Minute
 
-// NewClient creates and initializes new TURN client.
-func NewClient(o ClientOptions) (*Client, error) {
+// New creates and initializes new TURN client.
+func New(o Options) (*Client, error) {
 	if o.Conn == nil {
 		return nil, errors.New("connection not provided")
 	}

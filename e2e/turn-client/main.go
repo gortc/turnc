@@ -105,7 +105,7 @@ func main() {
 		zap.Stringer("raddr", c.RemoteAddr()),
 		zap.Stringer("peer", echoAddr),
 	)
-	client, err := turnc.NewClient(turnc.ClientOptions{
+	client, err := turnc.New(turnc.Options{
 		Log:      logger.Named("client"),
 		Conn:     c,
 		Username: "user",
