@@ -1,5 +1,6 @@
 package turnc
 
+// TODO(ar): Move to logging package.
 type nopLogger struct{}
 
 func (nopLogger) Trace(msg string)                          {}
