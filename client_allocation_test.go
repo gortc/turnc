@@ -112,6 +112,9 @@ func TestClient_Allocate(t *testing.T) {
 		if allocErr != nil {
 			t.Fatal(allocErr)
 		}
+		if r := a.Relayed(); r.Port != 1113 || !r.IP.Equal(net.IPv4(127, 0, 0, 2)) {
+			t.Errorf("unexpected relayed addr: %s", r)
+		}
 		peer := &net.UDPAddr{
 			IP:   net.IPv4(127, 0, 0, 1),
 			Port: 1001,
