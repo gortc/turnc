@@ -29,7 +29,7 @@ trap 'cleanup ; printf "${RED}Tests Failed For Unexpected Reasons${NC}\n"'\
 
 # PREPARING NETWORK CAPTURE
 docker network create turn_e2e_coturn --internal
-docker build -t gortc/tcpdump -f tcpdump.Dockerfile .
+docker build -t ci_turn_tcpdump -f tcpdump.Dockerfile .
 
 NETWORK_ID=`docker network inspect turn_e2e_coturn -f "{{.Id}}"`
 NETWORK_SUBNET=`docker network inspect turn_e2e_coturn -f "{{(index .IPAM.Config 0).Subnet}}"`
@@ -39,10 +39,10 @@ echo "will capture traffic on $CAPTURE_INTERFACE$"
 
 docker run -e INTERFACE=${CAPTURE_INTERFACE} -e SUBNET=${NETWORK_SUBNET} -d \
     -v $(pwd):/root/dump \
-    --name ci_tcpdump --net=host gortc/tcpdump
+    --name ci_tcpdump --net=host ci_turn_tcpdump
 
 # build and run the composed services
-docker-compose -p ci build && docker-compose -p ci up -d
+docker-compose -p ci build --parallel && docker-compose -p ci up -d
 if [ $? -ne 0 ] ; then
   printf "${RED}Docker Compose Failed${NC}\n"
   exit -1
@@ -61,7 +61,7 @@ docker logs ci_tcpdump &> log-tcpdump.txt
 cat log-client.txt
 
 # inspect the output of the test and display respective message
-if [ -z ${TEST_EXIT_CODE+x} ] || [ "$TEST_EXIT_CODE" -ne 0 ] ; then
+if [[ -z ${TEST_EXIT_CODE+x} ]] || [[ "$TEST_EXIT_CODE" -ne 0 ]] ; then
   printf "${RED}Tests Failed${NC} - Exit Code: $TEST_EXIT_CODE\n"
 else
   printf "${GREEN}Tests Passed${NC}\n"
