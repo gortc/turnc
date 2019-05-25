@@ -178,6 +178,11 @@ func (a *Allocation) allocate(peer turn.PeerAddress) error {
 	return nil
 }
 
+// Relayed returns the relayed address for the allocation
+func (a *Allocation) Relayed() turn.RelayedAddress {
+	return a.relayed
+}
+
 // CreateUDP creates new UDP Permission to peer with provided addr.
 func (a *Allocation) CreateUDP(addr *net.UDPAddr) (*Permission, error) {
 	peer := turn.PeerAddress{
