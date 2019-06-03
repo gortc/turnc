@@ -3,8 +3,9 @@ language: go
 sudo: false
 
 env:
-  - GO111MODULE=on
-  - GOLANGCI_VER=v1.14.0
+  global:
+    - GO111MODULE=on
+    - GOLANGCI_VER=v1.14.0
 
 go:
   - stable
