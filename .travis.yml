@@ -5,7 +5,7 @@ sudo: false
 env:
   global:
     - GO111MODULE=on
-    - GOLANGCI_VER=v1.14.0
+    - GOLANGCI_VER=v1.16.0
 
 go:
   - stable
