@@ -5,7 +5,7 @@ set -e
 SCRIPT_PATH=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 EXCLUDE_DIRECTORIES="--exclude-dir=examples --exclude-dir=.idea --exclude-dir=e2e --exclude-dir=cmd --exclude-dir=.git --exclude-dir=.github --exclude-dir=stuntest --exclude=README.md --exclude fuzz.go --exclude client.go"
 # TODO(ar): Add back panic
-DISALLOWED_FUNCTIONS=('os.Exit(' 'Fatal(' 'Fatalf(' 'Fatalln(' 'fmt.Println(' 'fmt.Printf(' 'log.Print(' 'log.Println(' 'log.Printf(')
+DISALLOWED_FUNCTIONS=('os.Exit(' 'panic(' 'Fatal(' 'Fatalf(' 'Fatalln(' 'fmt.Println(' 'fmt.Printf(' 'log.Print(' 'log.Println(' 'log.Printf(')
 
 
 for disallowedFunction in "${DISALLOWED_FUNCTIONS[@]}"
