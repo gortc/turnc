@@ -19,6 +19,7 @@ import (
 type Client struct {
 	log         logging.LeveledLogger
 	con         net.Conn
+	conClose    bool
 	stun        STUNClient
 	mux         sync.RWMutex
 	username    stun.Username
@@ -27,6 +28,7 @@ type Client struct {
 	integrity   stun.MessageIntegrity
 	alloc       *Allocation // the only allocation
 	refreshRate time.Duration
+	done        chan struct{}
 }
 
 // Options contains available config for TURN  client.
@@ -46,6 +48,9 @@ type Options struct {
 	// TURN options.
 	RefreshRate     time.Duration
 	RefreshDisabled bool
+
+	// ConnManualClose disables connection automatic close on Close().
+	ConnManualClose bool
 }
 
 // RefreshRate returns current rate of refresh requests.
@@ -64,6 +69,11 @@ func New(o Options) (*Client, error) {
 	c := &Client{
 		password: o.Password,
 		log:      o.Log,
+		conClose: true,
+	}
+	if o.ConnManualClose {
+		o.Log.Debug("manual close is enabled")
+		c.conClose = false
 	}
 	if o.STUN == nil {
 		// Setting up de-multiplexing.
@@ -92,6 +102,7 @@ func New(o Options) (*Client, error) {
 			return nil, err
 		}
 	}
+	c.done = make(chan struct{})
 	c.stun = o.STUN
 	c.con = o.Conn
 	c.refreshRate = defaultRefreshRate
@@ -112,6 +123,7 @@ func New(o Options) (*Client, error) {
 type STUNClient interface {
 	Indicate(m *stun.Message) error
 	Do(m *stun.Message, f func(e stun.Event)) error
+	Close() error
 }
 
 var dataIndication = stun.NewType(stun.MethodData, stun.ClassIndication)
@@ -166,7 +178,8 @@ func (c *Client) readUntilClosed() {
 			if err == io.EOF {
 				continue
 			}
-			c.log.Errorf("read failed: %v", err)
+			c.log.Debugf("read error: %v", err)
+			c.log.Info("connection closed")
 			break
 		}
 		data := buf[:n]
@@ -182,6 +195,7 @@ func (c *Client) readUntilClosed() {
 		}
 		go c.handleChannelData(cData)
 	}
+	close(c.done)
 }
 
 func (c *Client) sendData(buf []byte, peerAddr *turn.PeerAddress) (int, error) {
@@ -224,4 +238,21 @@ func (c *Client) do(req, res *stun.Message) error {
 		return doErr
 	}
 	return stunErr
+}
+
+func (c *Client) Close() error {
+	if !c.conClose {
+		// TODO(ernado): Cleanup all resources.
+		return nil
+	}
+	c.log.Error("closing connection")
+	if err := c.con.Close(); err != nil {
+		return err
+	}
+	if err := c.stun.Close(); err != nil {
+		c.log.Errorf("failed to close stun client: %v", err)
+	}
+	<-c.done
+	c.log.Error("done signaled")
+	return nil
 }

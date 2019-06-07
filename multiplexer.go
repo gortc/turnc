@@ -8,7 +8,6 @@ import (
 	"github.com/gortc/turn"
 
 	"github.com/pion/logging"
-
 	"github.com/pion/stun"
 )
 
@@ -64,7 +63,7 @@ func (m *multiplexer) readUntilClosed() {
 		if err != nil {
 			// End of cycle.
 			// TODO: Handle timeouts and temporary errors.
-			m.log.Errorf("mux: failed to read: %v", err)
+			m.log.Info("connection closed")
 			m.close()
 			break
 		}

@@ -24,6 +24,8 @@ type testSTUN struct {
 	do       func(m *stun.Message, f func(e stun.Event)) error
 }
 
+func (t testSTUN) Close() error { return nil }
+
 func (t testSTUN) Indicate(m *stun.Message) error { return t.indicate(m) }
 
 func (t testSTUN) Do(m *stun.Message, f func(e stun.Event)) error { return t.do(m, f) }
@@ -625,4 +627,41 @@ func TestClient_do(t *testing.T) {
 	if err := connL.Close(); err != nil {
 		t.Error(err)
 	}
+}
+
+func TestClient_Close(t *testing.T) {
+	t.Run("Default", func(t *testing.T) {
+		connL, connR := net.Pipe()
+		c, createErr := New(Options{
+			Conn: connR,
+		})
+		if createErr != nil {
+			t.Fatal(createErr)
+		}
+		if c == nil {
+			t.Fatal("client should not be nil")
+		}
+		if err := c.Close(); err != nil {
+			t.Fatal(err)
+		}
+		mustClose(t, connL)
+	})
+	t.Run("Real", func(t *testing.T) {
+		conn, err := net.Dial("udp", "localhost:0")
+		if err != nil {
+			t.Fatal(err)
+		}
+		c, createErr := New(Options{
+			Conn: conn,
+		})
+		if createErr != nil {
+			t.Fatal(createErr)
+		}
+		if c == nil {
+			t.Fatal("client should not be nil")
+		}
+		if err := c.Close(); err != nil {
+			t.Fatal(err)
+		}
+	})
 }
