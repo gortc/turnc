@@ -117,6 +117,7 @@ func (c *Client) Allocate() (*Allocation, error) {
 	if err := c.realm.GetFrom(res); err != nil {
 		return nil, err
 	}
+	c.realm = append([]byte(nil), c.realm...)
 	c.integrity = stun.NewLongTermIntegrity(
 		c.username.String(), c.realm.String(), c.password,
 	)
