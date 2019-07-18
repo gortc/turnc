@@ -9,12 +9,5 @@ Based on [gortc/stun](https://github.com/gortc/stun) and [gortc/turn](https://gi
 
 *Work in progress*
 
-
-### Contributing
-Check out the **[contributing wiki](https://github.com/pion/webrtc/wiki/Contributing)** to join the group of amazing people making this project possible:
-
-* [Aleksandr Razumov](https://github.com/ernado)
-* [Sean DuBois](https://github.com/Sean-Der)
-
 ## License
 MIT
