@@ -1,13 +1,14 @@
-[![Build Status](https://travis-ci.com/pion/turnc.svg?branch=master)](https://travis-ci.com/pion/turnc)
-[![codecov](https://codecov.io/gh/pion/turnc/branch/master/graph/badge.svg)](https://codecov.io/gh/pion/turnc)
-[![GoDoc](https://godoc.org/github.com/pion/turnc?status.svg)](https://godoc.org/github.com/pion/turnc)
+[![Build Status](https://travis-ci.com/gortc/turnc.svg?branch=master)](https://travis-ci.com/gortc/turnc)
+[![codecov](https://codecov.io/gh/ernado/turnc/branch/master/graph/badge.svg)](https://codecov.io/gh/pion/turnc)
+[![GoDoc](https://godoc.org/github.com/gortc/turnc?status.svg)](https://godoc.org/github.com/gortc/turnc)
 
 # TURNc
 
 Package `turnc` implements TURN [[RFC5766](https://tools.ietf.org/html/rfc5766)] client.
-Based on [pion/stun](https://github.com/pion/stun) and [gortc/turn](https://github.com/gortc/turn) packages.
+Based on [gortc/stun](https://github.com/gortc/stun) and [gortc/turn](https://github.com/gortc/turn) packages.
 
 *Work in progress*
+
 
 ### Contributing
 Check out the **[contributing wiki](https://github.com/pion/webrtc/wiki/Contributing)** to join the group of amazing people making this project possible:

@@ -8,8 +8,9 @@ import (
 
 	"github.com/gortc/turn"
 
+	"github.com/gortc/stun"
+
 	"github.com/pion/logging"
-	"github.com/pion/stun"
 )
 
 // Allocation reflects TURN Allocation.

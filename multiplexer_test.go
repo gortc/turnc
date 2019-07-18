@@ -8,7 +8,7 @@ import (
 
 	"github.com/pion/logging"
 
-	"github.com/pion/turnc/internal/testutil"
+	"github.com/gortc/turnc/internal/testutil"
 )
 
 type closeFunc func() error

@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/gortc/turn"
+	"github.com/gortc/turnc"
 
 	"github.com/pion/logging"
-	"github.com/pion/turnc"
 )
 
 const (

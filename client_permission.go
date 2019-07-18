@@ -12,7 +12,7 @@ import (
 
 	"github.com/pion/logging"
 
-	"github.com/pion/stun"
+	"github.com/gortc/stun"
 )
 
 // Permission implements net.PacketConn.

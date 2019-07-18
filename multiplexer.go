@@ -7,8 +7,9 @@ import (
 
 	"github.com/gortc/turn"
 
+	"github.com/gortc/stun"
+
 	"github.com/pion/logging"
-	"github.com/pion/stun"
 )
 
 // multiplexer de-multiplexes STUN, TURN and application data

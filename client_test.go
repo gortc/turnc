@@ -15,8 +15,9 @@ import (
 
 	"github.com/pion/logging"
 
-	"github.com/pion/stun"
-	"github.com/pion/turnc/internal/testutil"
+	"github.com/gortc/turnc/internal/testutil"
+
+	"github.com/gortc/stun"
 )
 
 type testSTUN struct {

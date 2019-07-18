@@ -6,8 +6,9 @@ import (
 	"net"
 	"os"
 
+	"github.com/gortc/turnc"
+
 	"github.com/pion/logging"
-	"github.com/pion/turnc"
 )
 
 var (

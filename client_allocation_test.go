@@ -9,8 +9,9 @@ import (
 
 	"github.com/gortc/turn"
 
-	"github.com/pion/stun"
-	"github.com/pion/turnc/internal/testutil"
+	"github.com/gortc/turnc/internal/testutil"
+
+	"github.com/gortc/stun"
 )
 
 func TestClient_Allocate(t *testing.T) {
