@@ -8,11 +8,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gortc/stun"
 	"github.com/gortc/turn"
 
 	"github.com/pion/logging"
-
-	"github.com/gortc/stun"
 )
 
 // Permission implements net.PacketConn.

@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pion/logging"
-
 	"github.com/gortc/turnc/internal/testutil"
+
+	"github.com/pion/logging"
 )
 
 type closeFunc func() error

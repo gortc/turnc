@@ -7,9 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gortc/turn"
-
 	"github.com/gortc/stun"
+	"github.com/gortc/turn"
 
 	"github.com/pion/logging"
 )

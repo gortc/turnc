@@ -11,13 +11,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gortc/stun"
 	"github.com/gortc/turn"
-
-	"github.com/pion/logging"
-
 	"github.com/gortc/turnc/internal/testutil"
 
-	"github.com/gortc/stun"
+	"github.com/pion/logging"
 )
 
 type testSTUN struct {

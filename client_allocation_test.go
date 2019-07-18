@@ -7,11 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gortc/turn"
-
-	"github.com/gortc/turnc/internal/testutil"
-
 	"github.com/gortc/stun"
+	"github.com/gortc/turn"
+	"github.com/gortc/turnc/internal/testutil"
 )
 
 func TestClient_Allocate(t *testing.T) {
