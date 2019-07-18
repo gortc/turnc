@@ -581,7 +581,7 @@ func TestClient_sendChan(t *testing.T) {
 	if c == nil {
 		t.Fatal("client should not be nil")
 	}
-	n, err := c.sendChan([]byte{0}, -1)
+	n, err := c.sendChan([]byte{0}, 1)
 	if n > 0 {
 		t.Error("sendChan should non return non-zero written bytes length")
 	}

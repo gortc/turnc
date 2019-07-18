@@ -86,6 +86,9 @@ issues:
       text: "(unnamedResult|exitAfterDefer)"
       linters:
         - gocritic
+    - source: "Permission struct"
+      linters:
+        - maligned
 
 linters:
   enable-all: true
