@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.com/gortc/turnc.svg?branch=master)](https://travis-ci.com/gortc/turnc)
-[![codecov](https://codecov.io/gh/ernado/turnc/branch/master/graph/badge.svg)](https://codecov.io/gh/pion/turnc)
+[![codecov](https://codecov.io/gh/gortc/turnc/branch/master/graph/badge.svg)](https://codecov.io/gh/gortc/turnc)
 [![GoDoc](https://godoc.org/github.com/gortc/turnc?status.svg)](https://godoc.org/github.com/gortc/turnc)
 
 # TURNc
