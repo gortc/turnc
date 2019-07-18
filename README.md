@@ -10,4 +10,5 @@ Based on [gortc/stun](https://github.com/gortc/stun) and [gortc/turn](https://gi
 *Work in progress*
 
 ## License
-MIT
+
+BSD
