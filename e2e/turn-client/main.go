@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/gortc/turn"
-	"github.com/gortc/turnc"
+	"gortc.io/turn"
+	"gortc.io/turnc"
 
 	"github.com/pion/logging"
 )

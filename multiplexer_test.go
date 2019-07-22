@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gortc/turnc/internal/testutil"
+	"gortc.io/turnc/internal/testutil"
 
 	"github.com/pion/logging"
 )

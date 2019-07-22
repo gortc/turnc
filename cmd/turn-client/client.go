@@ -6,7 +6,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/gortc/turnc"
+	"gortc.io/turnc"
 
 	"github.com/pion/logging"
 )

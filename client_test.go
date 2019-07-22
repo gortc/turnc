@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gortc/stun"
-	"github.com/gortc/turn"
-	"github.com/gortc/turnc/internal/testutil"
+	"gortc.io/stun"
+	"gortc.io/turn"
+	"gortc.io/turnc/internal/testutil"
 
 	"github.com/pion/logging"
 )

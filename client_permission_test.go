@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gortc/turn"
+	"gortc.io/turn"
 
 	"github.com/pion/logging"
 
-	"github.com/gortc/turnc/internal/testutil"
+	"gortc.io/turnc/internal/testutil"
 
-	"github.com/gortc/stun"
+	"gortc.io/stun"
 )
 
 func TestPermission(t *testing.T) {
