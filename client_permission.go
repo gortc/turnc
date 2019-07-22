@@ -8,15 +8,15 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
+
 	"gortc.io/stun"
 	"gortc.io/turn"
-
-	"github.com/pion/logging"
 )
 
 // Permission implements net.PacketConn.
 type Permission struct {
-	log          logging.LeveledLogger
+	log          *zap.Logger
 	mux          sync.RWMutex
 	number       turn.ChannelNumber
 	peerAddr     turn.PeerAddress
@@ -80,7 +80,7 @@ func (p *Permission) startLoop(f func()) {
 func (p *Permission) startRefreshLoop() {
 	p.startLoop(func() {
 		if err := p.refresh(); err != nil {
-			p.log.Errorf("failed to refresh permission: %v", err)
+			p.log.Error("failed to refresh permission", zap.Error(err))
 		}
 		p.log.Debug("permission refreshed")
 	})
@@ -149,7 +149,7 @@ func (p *Permission) Bind() error {
 	p.number = n
 	p.startLoop(func() {
 		if err := p.refreshBind(); err != nil {
-			p.log.Errorf("failed to refresh bind: %v", err)
+			p.log.Error("failed to refresh bind", zap.Error(err))
 		}
 	})
 	return nil

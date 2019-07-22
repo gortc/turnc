@@ -6,9 +6,9 @@ import (
 	"net"
 	"os"
 
-	"gortc.io/turnc"
+	"go.uber.org/zap"
 
-	"github.com/pion/logging"
+	"gortc.io/turnc"
 )
 
 var (
@@ -26,8 +26,12 @@ var (
 
 func main() {
 	flag.Parse()
-	lf := logging.NewDefaultLoggerFactory()
-	logger := lf.NewLogger("test")
+	l, lErr := zap.NewDevelopment()
+	if lErr != nil {
+		panic(lErr)
+	}
+	logger := l.Sugar()
+
 	if flag.Arg(0) == "peer" {
 		_, port, err := net.SplitHostPort(*peer)
 		logger.Info("running in peer mode")
@@ -74,7 +78,7 @@ func main() {
 	}
 	logger.Infof("dial server %s -> %s", c.LocalAddr(), c.RemoteAddr())
 	client, clientErr := turnc.New(turnc.Options{
-		Log:      logger,
+		Log:      l,
 		Conn:     c,
 		Username: *username,
 		Password: *password,

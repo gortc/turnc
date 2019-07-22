@@ -7,6 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"go.uber.org/zap"
+
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
+
 	"gortc.io/stun"
 	"gortc.io/turn"
 	"gortc.io/turnc/internal/testutil"
@@ -14,11 +19,12 @@ import (
 
 func TestClient_Allocate(t *testing.T) {
 	t.Run("Anonymous", func(t *testing.T) {
-		logs := &testutil.Observer{}
+		core, logs := observer.New(zapcore.DebugLevel)
+
 		connL, connR := net.Pipe()
 		stunClient := &testSTUN{}
 		c, createErr := New(Options{
-			Log:  logs,
+			Log:  zap.New(core),
 			Conn: connR, // should not be used
 			STUN: stunClient,
 		})
@@ -340,12 +346,12 @@ func TestClient_Allocate(t *testing.T) {
 		})
 	})
 	t.Run("Authenticated", func(t *testing.T) {
-		logs := &testutil.Observer{}
+		core, logs := observer.New(zapcore.DebugLevel)
 		connL, connR := net.Pipe()
 		connL.Close()
 		stunClient := &testSTUN{}
 		c, createErr := New(Options{
-			Log:  logs,
+			Log:  zap.New(core),
 			Conn: connR, // should not be used
 			STUN: stunClient,
 

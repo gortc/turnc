@@ -1,6 +1,6 @@
 FROM golang:latest
 
-RUN go get github.com/gortc/gortcd
+RUN go get gortc.io/gortcd
 COPY gortcd.yml .
 
 CMD ["gortcd"]

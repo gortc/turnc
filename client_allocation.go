@@ -6,15 +6,15 @@ import (
 	"fmt"
 	"net"
 
+	"go.uber.org/zap"
+
 	"gortc.io/stun"
 	"gortc.io/turn"
-
-	"github.com/pion/logging"
 )
 
 // Allocation reflects TURN Allocation.
 type Allocation struct {
-	log       logging.LeveledLogger
+	log       *zap.Logger
 	client    *Client
 	relayed   turn.RelayedAddress
 	reflexive stun.XORMappedAddress

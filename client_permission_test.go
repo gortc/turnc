@@ -7,9 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"gortc.io/turn"
+	"go.uber.org/zap"
 
-	"github.com/pion/logging"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
+
+	"gortc.io/turn"
 
 	"gortc.io/turnc/internal/testutil"
 
@@ -20,11 +23,11 @@ func TestPermission(t *testing.T) {
 	t.Run("Refresh", func(t *testing.T) {
 		t.Run("Permission", func(t *testing.T) {
 			t.Run("Ok", func(t *testing.T) {
-				logs := &testutil.Observer{}
+				core, logs := observer.New(zapcore.DebugLevel)
 				connL, connR := net.Pipe()
 				stunClient := &testSTUN{}
 				c, createErr := New(Options{
-					Log:         logs,
+					Log:         zap.New(core),
 					Conn:        connR, // should not be used
 					STUN:        stunClient,
 					RefreshRate: time.Microsecond,
@@ -93,11 +96,11 @@ func TestPermission(t *testing.T) {
 				testutil.EnsureNoErrors(t, logs)
 			})
 			t.Run("Error", func(t *testing.T) {
-				logs := &testutil.Observer{Level: logging.LogLevelError}
+				core, logs := observer.New(zapcore.DebugLevel)
 				connL, connR := net.Pipe()
 				stunClient := &testSTUN{}
 				c, createErr := New(Options{
-					Log:         logs,
+					Log:         zap.New(core),
 					Conn:        connR, // should not be used
 					STUN:        stunClient,
 					RefreshRate: time.Microsecond,
@@ -174,7 +177,7 @@ func TestPermission(t *testing.T) {
 				connL.Close()
 				found := false
 				for _, l := range logs.All() {
-					if l.Level != logging.LogLevelError {
+					if l.Level != zap.ErrorLevel {
 						continue
 					}
 					if !strings.HasPrefix(l.Message, "failed to refresh permission") {
@@ -189,11 +192,11 @@ func TestPermission(t *testing.T) {
 		})
 		t.Run("Binding", func(t *testing.T) {
 			t.Run("Ok", func(t *testing.T) {
-				logs := &testutil.Observer{}
+				core, logs := observer.New(zapcore.DebugLevel)
 				connL, connR := net.Pipe()
 				stunClient := &testSTUN{}
 				c, createErr := New(Options{
-					Log:         logs,
+					Log:         zap.New(core),
 					Conn:        connR, // should not be used
 					STUN:        stunClient,
 					RefreshRate: time.Microsecond,
@@ -273,11 +276,11 @@ func TestPermission(t *testing.T) {
 				testutil.EnsureNoErrors(t, logs)
 			})
 			t.Run("Error", func(t *testing.T) {
-				logs := &testutil.Observer{Level: logging.LogLevelError}
+				core, logs := observer.New(zap.DebugLevel)
 				connL, connR := net.Pipe()
 				stunClient := &testSTUN{}
 				c, createErr := New(Options{
-					Log:         logs,
+					Log:         zap.New(core),
 					Conn:        connR, // should not be used
 					STUN:        stunClient,
 					RefreshRate: time.Microsecond,
@@ -365,7 +368,7 @@ func TestPermission(t *testing.T) {
 				connL.Close()
 				found := false
 				for _, l := range logs.All() {
-					if l.Level != logging.LogLevelError {
+					if l.Level != zap.ErrorLevel {
 						continue
 					}
 					if !strings.Contains(l.Message, "failed to refresh bind") {
@@ -378,11 +381,11 @@ func TestPermission(t *testing.T) {
 				}
 			})
 			t.Run("NoRefresh", func(t *testing.T) {
-				logs := &testutil.Observer{}
+				core, logs := observer.New(zapcore.DebugLevel)
 				connL, connR := net.Pipe()
 				stunClient := &testSTUN{}
 				c, createErr := New(Options{
-					Log:             logs,
+					Log:             zap.New(core),
 					Conn:            connR, // should not be used
 					STUN:            stunClient,
 					RefreshDisabled: true,
@@ -457,11 +460,11 @@ func TestPermission(t *testing.T) {
 				testutil.EnsureNoErrors(t, logs)
 			})
 			t.Run("Authenticated", func(t *testing.T) {
-				logs := &testutil.Observer{}
+				core, logs := observer.New(zapcore.DebugLevel)
 				connL, connR := net.Pipe()
 				stunClient := &testSTUN{}
 				c, createErr := New(Options{
-					Log:         logs,
+					Log:         zap.New(core),
 					Conn:        connR, // should not be used
 					STUN:        stunClient,
 					RefreshRate: time.Microsecond,

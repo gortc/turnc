@@ -5,16 +5,16 @@ import (
 	"io/ioutil"
 	"net"
 
+	"go.uber.org/zap"
+
 	"gortc.io/stun"
 	"gortc.io/turn"
-
-	"github.com/pion/logging"
 )
 
 // multiplexer de-multiplexes STUN, TURN and application data
 // from one connection into separate ones.
 type multiplexer struct {
-	log      logging.LeveledLogger
+	log      *zap.Logger
 	capacity int
 	conn     net.Conn
 
@@ -23,7 +23,7 @@ type multiplexer struct {
 	dataL, dataR net.Conn
 }
 
-func newMultiplexer(conn net.Conn, log logging.LeveledLogger) *multiplexer {
+func newMultiplexer(conn net.Conn, log *zap.Logger) *multiplexer {
 	m := &multiplexer{conn: conn, capacity: 1500, log: log}
 	m.stunL, m.stunR = net.Pipe()
 	m.turnL, m.turnR = net.Pipe()
@@ -36,16 +36,16 @@ func (m *multiplexer) discardData() {
 	discardLogged(m.log, "mux: failed to discard dataL: %v", m.dataL)
 }
 
-func discardLogged(l logging.LeveledLogger, msg string, r io.Reader) {
+func discardLogged(l *zap.Logger, msg string, r io.Reader) {
 	_, err := io.Copy(ioutil.Discard, r)
 	if err != nil {
-		l.Errorf(msg, err)
+		l.Error(msg, zap.Error(err))
 	}
 }
 
-func closeLogged(l logging.LeveledLogger, msg string, conn io.Closer) {
+func closeLogged(l *zap.Logger, msg string, conn io.Closer) {
 	if closeErr := conn.Close(); closeErr != nil {
-		l.Errorf(msg, closeErr)
+		l.Error(msg, zap.Error(closeErr))
 	}
 }
 
@@ -59,7 +59,7 @@ func (m *multiplexer) readUntilClosed() {
 	buf := make([]byte, m.capacity)
 	for {
 		n, err := m.conn.Read(buf)
-		m.log.Debugf("mux: read %d err: %v", n, err)
+		m.log.Debug("mux: read", zap.Int("n", n), zap.Error(err))
 		if err != nil {
 			// End of cycle.
 			// TODO: Handle timeouts and temporary errors.
@@ -81,7 +81,7 @@ func (m *multiplexer) readUntilClosed() {
 		}
 		_, err = conn.Write(data)
 		if err != nil {
-			m.log.Warnf("failed to write: %v", err)
+			m.log.Warn("failed to write", zap.Error(err))
 		}
 	}
 }

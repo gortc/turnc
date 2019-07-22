@@ -7,17 +7,16 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
 	"gortc.io/stun"
 	"gortc.io/turn"
-
-	"github.com/pion/logging"
 )
 
 // Client for TURN server.
 //
 // Provides transparent net.Conn interfaces to remote peers.
 type Client struct {
-	log         logging.LeveledLogger
+	log         *zap.Logger
 	con         net.Conn
 	conClose    bool
 	stun        STUNClient
@@ -34,8 +33,8 @@ type Client struct {
 // Options contains available config for TURN  client.
 type Options struct {
 	Conn net.Conn
-	STUN STUNClient            // optional STUN client
-	Log  logging.LeveledLogger // defaults to Nop
+	STUN STUNClient  // optional STUN client
+	Log  *zap.Logger // defaults to Nop
 
 	// Long-term integrity.
 	Username string
@@ -64,7 +63,7 @@ func New(o Options) (*Client, error) {
 		return nil, errors.New("connection not provided")
 	}
 	if o.Log == nil {
-		o.Log = nopLogger{}
+		o.Log = zap.NewNop()
 	}
 	c := &Client{
 		password: o.Password,
@@ -141,7 +140,7 @@ func (c *Client) stunHandler(e stun.Event) {
 		addr turn.PeerAddress
 	)
 	if err := e.Message.Parse(&data, &addr); err != nil {
-		c.log.Errorf("failed to parse while handling incoming STUN message: %v", err)
+		c.log.Error("failed to parse while handling incoming STUN message", zap.Error(err))
 		return
 	}
 	c.mux.RLock()
@@ -150,21 +149,21 @@ func (c *Client) stunHandler(e stun.Event) {
 			continue
 		}
 		if _, err := c.alloc.perms[i].peerL.Write(data); err != nil {
-			c.log.Errorf("failed to write: %v", err)
+			c.log.Error("failed to write", zap.Error(err))
 		}
 	}
 	c.mux.RUnlock()
 }
 
 func (c *Client) handleChannelData(data *turn.ChannelData) {
-	c.log.Debugf("handleChannelData: 0x%x", int(data.Number))
+	c.log.Debug("handleChannelData", zap.Int("n", int(data.Number)))
 	c.mux.RLock()
 	for i := range c.alloc.perms {
 		if data.Number != c.alloc.perms[i].Binding() {
 			continue
 		}
 		if _, err := c.alloc.perms[i].peerL.Write(data.Data); err != nil {
-			c.log.Errorf("failed to write: %v", err)
+			c.log.Error("failed to write", zap.Error(err))
 		}
 	}
 	c.mux.RUnlock()
@@ -178,7 +177,7 @@ func (c *Client) readUntilClosed() {
 			if err == io.EOF {
 				continue
 			}
-			c.log.Debugf("read error: %v", err)
+			c.log.Debug("read error", zap.Error(err))
 			c.log.Info("connection closed")
 			break
 		}
@@ -250,7 +249,7 @@ func (c *Client) Close() error {
 		return err
 	}
 	if err := c.stun.Close(); err != nil {
-		c.log.Errorf("failed to close stun client: %v", err)
+		c.log.Error("failed to close stun client", zap.Error(err))
 	}
 	<-c.done
 	c.log.Error("done signaled")

@@ -11,11 +11,12 @@ import (
 	"testing"
 	"time"
 
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
 	"gortc.io/stun"
 	"gortc.io/turn"
 	"gortc.io/turnc/internal/testutil"
-
-	"github.com/pion/logging"
 )
 
 type testSTUN struct {
@@ -244,11 +245,11 @@ func testPipe(t *testing.T, lName, rName string) (net.Conn, net.Conn) {
 }
 
 func TestClientMultiplexed(t *testing.T) {
-	logs := &testutil.Observer{Level: logging.LogLevelDebug}
+	core, logs := observer.New(zapcore.DebugLevel)
 	connL, connR := testPipe(t, "server", "client")
 	timeout := time.Second * 10
 	c, createErr := New(Options{
-		Log:          logs,
+		Log:          zap.New(core),
 		Conn:         connR,
 		RTO:          timeout,
 		NoRetransmit: true,
@@ -433,13 +434,13 @@ func mustClose(t *testing.T, closer io.Closer) {
 }
 
 func TestClient_STUNHandler(t *testing.T) {
-	logs := &testutil.Observer{Level: logging.LogLevelDebug}
+	core, logs := observer.New(zapcore.DebugLevel)
 	connL, connR := testPipe(t, "server", "client")
 	defer mustClose(t, connL)
 	defer mustClose(t, connR)
 	timeout := time.Second * 10
 	c, createErr := New(Options{
-		Log:          logs,
+		Log:          zap.New(core),
 		Conn:         connR,
 		RTO:          timeout,
 		NoRetransmit: true,
@@ -465,7 +466,7 @@ func TestClient_STUNHandler(t *testing.T) {
 		})
 		found := false
 		for _, l := range logs.All() {
-			if l.Level != logging.LogLevelError {
+			if l.Level != zap.ErrorLevel {
 				continue
 			}
 			if !strings.Contains(l.Message, "failed to parse while handling incoming STUN message") {
@@ -480,11 +481,11 @@ func TestClient_STUNHandler(t *testing.T) {
 	})
 	t.Run("WriteErr", func(t *testing.T) {
 		stunClient := &testSTUN{}
-		logs := &testutil.Observer{Level: logging.LogLevelError}
+		core, logs := observer.New(zap.ErrorLevel)
 		connL, connR = testPipe(t, "server", "client")
 		timeout := time.Second * 10
 		c, createErr = New(Options{
-			Log:          logs,
+			Log:          zap.New(core),
 			Conn:         connR,
 			RTO:          timeout,
 			NoRetransmit: true,
@@ -553,7 +554,7 @@ func TestClient_STUNHandler(t *testing.T) {
 		})
 		found := false
 		for _, l := range logs.All() {
-			if l.Level != logging.LogLevelError {
+			if l.Level != zap.ErrorLevel {
 				continue
 			}
 			if !strings.HasPrefix(l.Message, "failed to write") {
