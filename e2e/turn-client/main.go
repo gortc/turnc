@@ -5,13 +5,12 @@ import (
 	"flag"
 	"fmt"
 	"net"
-	"os"
 	"time"
+
+	"go.uber.org/zap"
 
 	"gortc.io/turn"
 	"gortc.io/turnc"
-
-	"github.com/pion/logging"
 )
 
 const (
@@ -37,7 +36,7 @@ func resolve(host string, port int) *net.UDPAddr {
 	panic(resolveErr)
 }
 
-func runPeer(logger logging.LeveledLogger) {
+func runPeer(logger *zap.SugaredLogger) {
 	laddr, err := net.ResolveUDPAddr(udp, fmt.Sprintf(":%d", peerPort))
 	if err != nil {
 		panic(fmt.Sprintf("failed to resolve UDP addr: %v", err))
@@ -65,10 +64,12 @@ func runPeer(logger logging.LeveledLogger) {
 
 func main() {
 	flag.Parse()
-	lf := logging.NewDefaultLoggerFactory()
-	logger := lf.NewLogger("test")
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		panic(err)
+	}
 	if flag.Arg(0) == "peer" {
-		runPeer(logger)
+		runPeer(logger.Sugar())
 	}
 	// Resolving server and peer addresses.
 	var (
@@ -78,10 +79,9 @@ func main() {
 	// Creating connection from client to server.
 	c, err := net.DialUDP(udp, nil, serverAddr)
 	if err != nil {
-		logger.Errorf("failed to dial to TURN server: %v", err)
-		os.Exit(2)
+		logger.Fatal("failed to dial to TURN server", zap.Error(err))
 	}
-	logger.Infof("dialed server: laddr=%s raddr=%s peer=%s", c.LocalAddr(), c.RemoteAddr(), echoAddr)
+	logger.Sugar().Infof("dialed server: laddr=%s raddr=%s peer=%s", c.LocalAddr(), c.RemoteAddr(), echoAddr)
 	client, err := turnc.New(turnc.Options{
 		Log:      logger,
 		Conn:     c,
@@ -121,7 +121,7 @@ func main() {
 	if !p.Bound() {
 		panic(fmt.Sprintf("should be bound"))
 	}
-	logger.Infof("bound to channel 0x%x", int(p.Binding()))
+	logger.Sugar().Infof("bound to channel 0x%x", int(p.Binding()))
 	// Sending and receiving "hello" message.
 	if _, err := fmt.Fprint(p, "hello"); err != nil {
 		panic(fmt.Sprintf("failed to write data"))
