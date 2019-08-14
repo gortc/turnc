@@ -146,12 +146,15 @@ func (c *Client) stunHandler(e stun.Event) {
 	}
 	c.mux.RLock()
 	for i := range c.alloc.perms {
-		if !turn.Addr(c.alloc.perms[i].peerAddr).Equal(turn.Addr(addr)) {
-			continue
+		for j := range c.alloc.perms[i].conn {
+			if !turn.Addr(c.alloc.perms[i].conn[j].peerAddr).Equal(turn.Addr(addr)) {
+				continue
+			}
+			if _, err := c.alloc.perms[i].conn[j].peerL.Write(data); err != nil {
+				c.log.Error("failed to write", zap.Error(err))
+			}
 		}
-		if _, err := c.alloc.perms[i].peerL.Write(data); err != nil {
-			c.log.Error("failed to write", zap.Error(err))
-		}
+
 	}
 	c.mux.RUnlock()
 }
@@ -160,11 +163,13 @@ func (c *Client) handleChannelData(data *turn.ChannelData) {
 	c.log.Debug("handleChannelData", zap.Int("n", int(data.Number)))
 	c.mux.RLock()
 	for i := range c.alloc.perms {
-		if data.Number != c.alloc.perms[i].Binding() {
-			continue
-		}
-		if _, err := c.alloc.perms[i].peerL.Write(data.Data); err != nil {
-			c.log.Error("failed to write", zap.Error(err))
+		for j := range c.alloc.perms[i].conn {
+			if data.Number != c.alloc.perms[i].conn[j].Binding() {
+				continue
+			}
+			if _, err := c.alloc.perms[i].conn[j].peerL.Write(data.Data); err != nil {
+				c.log.Error("failed to write", zap.Error(err))
+			}
 		}
 	}
 	c.mux.RUnlock()

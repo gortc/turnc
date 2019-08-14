@@ -95,15 +95,19 @@ func main() {
 	if resolveErr != nil {
 		panic(resolveErr)
 	}
-	permission, createErr := a.Create(peerAddr)
+	permission, createErr := a.Create(peerAddr.IP)
 	if createErr != nil {
 		panic(createErr)
 	}
-	if _, writeRrr := fmt.Fprint(permission, "hello world!"); writeRrr != nil {
+	conn, err := permission.CreateUDP(peerAddr)
+	if err != nil {
+		panic(err)
+	}
+	if _, writeRrr := fmt.Fprint(conn, "hello world!"); writeRrr != nil {
 		panic(writeRrr)
 	}
 	buf := make([]byte, 1500)
-	n, readErr := permission.Read(buf)
+	n, readErr := conn.Read(buf)
 	if readErr != nil {
 		panic(readErr)
 	}

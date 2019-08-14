@@ -79,7 +79,7 @@ func TestPermission(t *testing.T) {
 					}
 					return nil
 				}
-				p, permErr := a.CreateUDP(peer)
+				p, permErr := a.Create(peer.IP)
 				if permErr != nil {
 					t.Fatal(allocErr)
 				}
@@ -161,7 +161,7 @@ func TestPermission(t *testing.T) {
 					}
 					return nil
 				}
-				p, permErr := a.CreateUDP(peer)
+				p, permErr := a.Create(peer.IP)
 				if permErr != nil {
 					t.Fatal(permErr)
 				}
@@ -256,11 +256,15 @@ func TestPermission(t *testing.T) {
 					}
 					return nil
 				}
-				p, permErr := a.CreateUDP(peer)
+				p, permErr := a.Create(peer.IP)
 				if permErr != nil {
 					t.Fatal(allocErr)
 				}
-				if err := p.Bind(); err != nil {
+				conn, err := p.CreateUDP(peer)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := conn.Bind(); err != nil {
 					t.Fatal(err)
 				}
 				select {
@@ -349,11 +353,15 @@ func TestPermission(t *testing.T) {
 					}
 					return nil
 				}
-				p, permErr := a.CreateUDP(peer)
+				p, permErr := a.Create(peer.IP)
 				if permErr != nil {
 					t.Fatal(allocErr)
 				}
-				if err := p.Bind(); err != nil {
+				conn, err := p.CreateUDP(peer)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := conn.Bind(); err != nil {
 					t.Fatal(err)
 				}
 				select {
@@ -444,14 +452,18 @@ func TestPermission(t *testing.T) {
 					}
 					return nil
 				}
-				p, permErr := a.CreateUDP(peer)
+				p, permErr := a.Create(peer.IP)
 				if permErr != nil {
 					t.Fatal(allocErr)
 				}
-				if err := p.Bind(); err != nil {
+				conn, err := p.CreateUDP(peer)
+				if err != nil {
 					t.Fatal(err)
 				}
-				if err := p.Close(); err != nil {
+				if err := conn.Bind(); err != nil {
+					t.Fatal(err)
+				}
+				if err := conn.Close(); err != nil {
 					t.Error(err)
 				}
 				if err := connL.Close(); err != nil {
@@ -566,11 +578,15 @@ func TestPermission(t *testing.T) {
 					}
 					return nil
 				}
-				p, permErr := a.CreateUDP(peer)
+				p, permErr := a.Create(peer.IP)
 				if permErr != nil {
 					t.Fatal(allocErr)
 				}
-				if err := p.Bind(); err != nil {
+				conn, err := p.CreateUDP(peer)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := conn.Bind(); err != nil {
 					t.Fatal(err)
 				}
 				select {
@@ -579,7 +595,7 @@ func TestPermission(t *testing.T) {
 				case <-time.After(time.Second):
 					t.Error("timed out")
 				}
-				if err := p.Close(); err != nil {
+				if err := conn.Close(); err != nil {
 					t.Error(err)
 				}
 				connL.Close()

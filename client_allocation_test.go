@@ -133,7 +133,7 @@ func TestClient_Allocate(t *testing.T) {
 				stunClient.do = func(m *stun.Message, f func(e stun.Event)) error {
 					return doErr
 				}
-				if _, permAddr := a.Create(addr); permAddr != doErr {
+				if _, permAddr := a.Create(addr.IP); permAddr != doErr {
 					t.Errorf("unexpected err: %v", permAddr)
 				}
 			})
@@ -147,7 +147,7 @@ func TestClient_Allocate(t *testing.T) {
 					})
 					return nil
 				}
-				if _, permAddr := a.Create(addr); permAddr == nil {
+				if _, permAddr := a.Create(addr.IP); permAddr == nil {
 					t.Errorf("error expected")
 				}
 				t.Run("NoCode", func(t *testing.T) {
@@ -159,7 +159,7 @@ func TestClient_Allocate(t *testing.T) {
 						})
 						return nil
 					}
-					if _, permAddr := a.Create(addr); permAddr == nil {
+					if _, permAddr := a.Create(addr.IP); permAddr == nil {
 						t.Errorf("error expected")
 					}
 				})
@@ -177,30 +177,18 @@ func TestClient_Allocate(t *testing.T) {
 			return nil
 		}
 		t.Run("Create", func(t *testing.T) {
-			t.Run("UDP", func(t *testing.T) {
-				if _, permAddr := a.Create(&net.UDPAddr{
-					IP:   net.IPv4(127, 0, 0, 1),
-					Port: 1002,
-				}); permAddr != nil {
+			t.Run("OK", func(t *testing.T) {
+				if _, permAddr := a.Create(net.IPv4(127, 0, 0, 1)); permAddr != nil {
 					t.Error(permAddr)
 				}
 			})
-			t.Run("Unexpected", func(t *testing.T) {
-				if _, permAddr := a.Create(&net.IPAddr{
-					IP: net.IPv4(127, 0, 0, 1),
-				}); permAddr == nil {
-					t.Error("error expected")
-				}
-			})
 			t.Run("BadIP", func(t *testing.T) {
-				if _, permAddr := a.Create(&net.UDPAddr{
-					IP: []byte{1, 2},
-				}); permAddr == nil {
+				if _, permAddr := a.Create([]byte{1, 2}); permAddr == nil {
 					t.Error("error expected")
 				}
 			})
 		})
-		p, permErr := a.CreateUDP(peer)
+		p, permErr := a.Create(peer.IP)
 		if permErr != nil {
 			t.Fatal(allocErr)
 		}
@@ -228,12 +216,16 @@ func TestClient_Allocate(t *testing.T) {
 			})
 			return nil
 		}
+		conn, err := p.CreateUDP(peer)
+		if err != nil {
+			t.Fatal(err)
+		}
 		sent := []byte{1, 2, 3, 4}
-		if _, writeErr := p.Write(sent); writeErr != nil {
+		if _, writeErr := conn.Write(sent); writeErr != nil {
 			t.Fatal(writeErr)
 		}
 		buf := make([]byte, 1500)
-		n, readErr := p.Read(buf)
+		n, readErr := conn.Read(buf)
 		if readErr != nil {
 			t.Fatal(readErr)
 		}
@@ -266,16 +258,16 @@ func TestClient_Allocate(t *testing.T) {
 				})
 				return nil
 			}
-			if bErr := p.Bind(); bErr != nil {
+			if bErr := conn.Bind(); bErr != nil {
 				t.Error(bErr)
 			}
-			if !p.Bound() {
+			if !conn.Bound() {
 				t.Error("should be bound")
 			}
-			if p.Binding() != n {
+			if conn.Binding() != n {
 				t.Error("invalid channel number")
 			}
-			if bErr := p.Bind(); bErr != ErrAlreadyBound {
+			if bErr := conn.Bind(); bErr != ErrAlreadyBound {
 				t.Error("should be already bound")
 			}
 			sent := []byte{1, 2, 3, 4}
@@ -302,7 +294,7 @@ func TestClient_Allocate(t *testing.T) {
 				}
 				gotWrite <- struct{}{}
 			}()
-			if _, writeErr := p.Write(sent); writeErr != nil {
+			if _, writeErr := conn.Write(sent); writeErr != nil {
 				t.Fatal(writeErr)
 			}
 			select {
@@ -325,10 +317,10 @@ func TestClient_Allocate(t *testing.T) {
 				}
 			}()
 			buf := make([]byte, 1500)
-			if setDeadlineErr := p.SetReadDeadline(time.Now().Add(timeout)); setDeadlineErr != nil {
+			if setDeadlineErr := conn.SetReadDeadline(time.Now().Add(timeout)); setDeadlineErr != nil {
 				t.Fatal(setDeadlineErr)
 			}
-			readN, readErr := p.Read(buf)
+			readN, readErr := conn.Read(buf)
 			if readErr != nil {
 				t.Fatal(readErr)
 			}
@@ -437,7 +429,7 @@ func TestClient_Allocate(t *testing.T) {
 			})
 			return nil
 		}
-		p, permErr := a.CreateUDP(peer)
+		p, permErr := a.Create(peer.IP)
 		if permErr != nil {
 			t.Fatal(permErr)
 		}
@@ -465,12 +457,16 @@ func TestClient_Allocate(t *testing.T) {
 			})
 			return nil
 		}
+		conn, err := p.CreateUDP(peer)
+		if err != nil {
+			t.Fatal(err)
+		}
 		sent := []byte{1, 2, 3, 4}
-		if _, writeErr := p.Write(sent); writeErr != nil {
+		if _, writeErr := conn.Write(sent); writeErr != nil {
 			t.Fatal(writeErr)
 		}
 		buf := make([]byte, 1500)
-		n, readErr := p.Read(buf)
+		n, readErr := conn.Read(buf)
 		if readErr != nil {
 			t.Fatal(readErr)
 		}
