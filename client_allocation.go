@@ -12,7 +12,8 @@ import (
 	"gortc.io/turn"
 )
 
-// Allocation reflects TURN Allocation.
+// Allocation reflects TURN Allocation, which is basically an IP:Port on
+// TURN server allocated for client.
 type Allocation struct {
 	log       *zap.Logger
 	client    *Client
