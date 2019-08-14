@@ -134,16 +134,6 @@ func (c *Client) Allocate() (*Allocation, error) {
 	return c.allocate(req, res)
 }
 
-// Create creates new permission to peer.
-func (a *Allocation) Create(peer net.Addr) (*Permission, error) {
-	switch addr := peer.(type) {
-	case *net.UDPAddr:
-		return a.CreateUDP(addr)
-	default:
-		return nil, fmt.Errorf("unsupported addr type %T", peer)
-	}
-}
-
 func (a *Allocation) allocate(peer turn.PeerAddress) error {
 	req := stun.New()
 	req.TransactionID = stun.NewTransactionID()
@@ -186,23 +176,22 @@ func (a *Allocation) Relayed() turn.RelayedAddress {
 }
 
 // CreateUDP creates new UDP Permission to peer with provided addr.
-func (a *Allocation) CreateUDP(addr *net.UDPAddr) (*Permission, error) {
+func (a *Allocation) Create(ip net.IP) (*Permission, error) {
 	peer := turn.PeerAddress{
-		IP:   addr.IP,
-		Port: addr.Port,
+		IP:   ip,
+		Port: 0, // Does not matter.
 	}
 	if err := a.allocate(peer); err != nil {
 		return nil, err
 	}
 	p := &Permission{
 		log:         a.log,
-		peerAddr:    peer,
+		ip:          ip,
 		client:      a.client,
 		refreshRate: a.client.refreshRate,
 	}
 	p.ctx, p.cancel = context.WithCancel(context.Background())
 	p.startRefreshLoop()
-	p.peerL, p.peerR = net.Pipe()
 	a.client.mux.Lock()
 	a.perms = append(a.perms, p)
 	a.client.mux.Unlock()

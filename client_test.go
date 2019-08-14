@@ -332,7 +332,7 @@ func TestClientMultiplexed(t *testing.T) {
 		gotRequest <- struct{}{}
 	}()
 	t.Log("creating udp permission")
-	p, permErr := a.CreateUDP(peer)
+	p, permErr := a.Create(peer.IP)
 	if permErr != nil {
 		t.Fatal(permErr)
 	}
@@ -342,7 +342,11 @@ func TestClientMultiplexed(t *testing.T) {
 	case <-time.After(timeout):
 		t.Fatal("timed out")
 	}
-	if p.Bound() {
+	conn, err := p.CreateUDP(peer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if conn.Bound() {
 		t.Error("should not be bound")
 	}
 	go func() {
@@ -369,7 +373,7 @@ func TestClientMultiplexed(t *testing.T) {
 		gotRequest <- struct{}{}
 	}()
 	t.Log("starting binding")
-	if bindErr := p.Bind(); bindErr != nil {
+	if bindErr := conn.Bind(); bindErr != nil {
 		t.Fatalf("failed to bind: %v", bindErr)
 	}
 	select {
@@ -394,7 +398,7 @@ func TestClientMultiplexed(t *testing.T) {
 		gotRequest <- struct{}{}
 	}()
 	sent := []byte{1, 2, 3, 4}
-	if _, writeErr := p.Write(sent); writeErr != nil {
+	if _, writeErr := conn.Write(sent); writeErr != nil {
 		t.Fatal(writeErr)
 	}
 	select {
@@ -405,7 +409,7 @@ func TestClientMultiplexed(t *testing.T) {
 	}
 	go func() {
 		d := &turn.ChannelData{
-			Number: p.Binding(),
+			Number: conn.Binding(),
 			Data:   sent,
 			Raw:    make([]byte, 1500),
 		}
@@ -416,7 +420,7 @@ func TestClientMultiplexed(t *testing.T) {
 		}
 	}()
 	buf := make([]byte, 1500)
-	n, readErr := p.Read(buf)
+	n, readErr := conn.Read(buf)
 	if readErr != nil {
 		t.Fatal(readErr)
 	}
@@ -532,17 +536,21 @@ func TestClient_STUNHandler(t *testing.T) {
 		if allocErr != nil {
 			t.Fatal(allocErr)
 		}
-		perm, err := a.CreateUDP(&net.UDPAddr{
+		perm, err := a.Create(net.IPv4(127, 0, 0, 1))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer mustClose(t, perm)
+		conn, err := perm.CreateUDP(&net.UDPAddr{
 			IP: net.IPv4(127, 0, 0, 1),
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer mustClose(t, perm)
-		if err = perm.peerR.Close(); err != nil {
+		if err = conn.peerR.Close(); err != nil {
 			t.Fatal(err)
 		}
-		if err = perm.peerL.Close(); err != nil {
+		if err = conn.peerL.Close(); err != nil {
 			t.Fatal(err)
 		}
 		c.stunHandler(stun.Event{

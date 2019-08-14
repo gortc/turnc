@@ -33,8 +33,7 @@ issues:
     - "hugeParam: o is heavy"
   exclude-rules:
     - text: "string `<nil>`"
-      linters:
-        - goconst
+      linters: [goconst]
 
     # Exclude some linters from running on tests files.
     - path: _test\.go
@@ -46,31 +45,26 @@ issues:
         - goconst
 
     - path: client\.go
-      linters:
-        - maligned
+      linters: [maligned]
 
     # Ease some gocritic warnings on test files.
     - path: testutil\.go
       text: "(rangeValCopy)"
-      linters:
-        - gocritic
+      linters: [gocritic]
 
     # Ease some gocritic warnings on test files.
     - path: _test\.go
       text: "(unnamedResult|exitAfterDefer|unlambda)"
-      linters:
-        - gocritic
+      linters: [gocritic]
 
     # Exclude known linters from partially hard-vendored code,
     # which is impossible to exclude via "nolint" comments.
     - path: internal/hmac/
       text: "weak cryptographic primitive"
-      linters:
-        - gosec
+      linters: [gosec]
     - path: internal/hmac/
       text: "Write\\` is not checked"
-      linters:
-        - errcheck
+      linters: [errcheck]
 
     # Ease linting on benchmarking code.
     - path: cmd/stun-bench/
@@ -80,15 +74,14 @@ issues:
         - unparam
 
     - path: ^cmd/
-      linters:
-        - gocyclo
+      linters: [gocyclo]
     - path: ^cmd/
       text: "(unnamedResult|exitAfterDefer)"
-      linters:
-        - gocritic
+      linters: [gocritic]
     - source: "Permission struct"
-      linters:
-        - maligned
+      linters: [maligned]
+    - source: "Connection struct"
+      linters: [maligned]
 
 linters:
   enable-all: true

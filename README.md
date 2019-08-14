@@ -56,18 +56,22 @@ func main() {
 	if createErr != nil {
 		panic(createErr)
 	}
-	// Permission implements net.Conn.
-	if _, writeRrr := fmt.Fprint(permission, "hello world!"); writeRrr != nil {
-		panic(peerAddr)
+	conn, err := permission.CreateUDP(peerAddr)
+	if err != nil {
+		panic(err)
+	}
+	// Connection implements net.Conn.
+	if _, writeRrr := fmt.Fprint(conn, "hello world!"); writeRrr != nil {
+		panic(writeRrr)
 	}
 	buf := make([]byte, 1500)
-	n, readErr := permission.Read(buf)
+	n, readErr := conn.Read(buf)
 	if readErr != nil {
 		panic(readErr)
 	}
-	fmt.Println("got message:", string(buf[:n]))
+	logger.Infof("got message: %s", string(buf[:n]))
 	// Also you can use ChannelData messages to reduce overhead:
-	if err := permission.Bind(); err != nil {
+	if err := conn.Bind(); err != nil {
 		panic(err)
 	}
 }

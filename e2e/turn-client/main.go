@@ -95,17 +95,21 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("failed to create allocation: %v", err))
 	}
-	p, err := a.Create(echoAddr)
+	p, err := a.Create(echoAddr.IP)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create permission: %v", err))
 	}
+	conn, err := p.CreateUDP(echoAddr)
+	if err != nil {
+		panic(fmt.Sprintf("failed to create connection: %v", err))
+	}
 	// Sending and receiving "hello" message.
-	if _, err := fmt.Fprint(p, "hello"); err != nil {
+	if _, err := fmt.Fprint(conn, "hello"); err != nil {
 		panic(fmt.Sprintf("failed to write data"))
 	}
 	sent := []byte("hello")
 	got := make([]byte, len(sent))
-	if _, err = p.Read(got); err != nil {
+	if _, err = conn.Read(got); err != nil {
 		panic(fmt.Sprintf("failed to read data: %v", err))
 	}
 	if !bytes.Equal(got, sent) {
@@ -115,18 +119,18 @@ func main() {
 	for i := range got {
 		got[i] = 0
 	}
-	if bindErr := p.Bind(); bindErr != nil {
+	if bindErr := conn.Bind(); bindErr != nil {
 		panic(fmt.Sprintf("failed to bind: %v", err))
 	}
-	if !p.Bound() {
+	if !conn.Bound() {
 		panic(fmt.Sprintf("should be bound"))
 	}
-	logger.Sugar().Infof("bound to channel 0x%x", int(p.Binding()))
+	logger.Sugar().Infof("bound to channel 0x%x", int(conn.Binding()))
 	// Sending and receiving "hello" message.
-	if _, err := fmt.Fprint(p, "hello"); err != nil {
+	if _, err := fmt.Fprint(conn, "hello"); err != nil {
 		panic(fmt.Sprintf("failed to write data"))
 	}
-	if _, err = p.Read(got); err != nil {
+	if _, err = conn.Read(got); err != nil {
 		panic(fmt.Sprintf("failed to read data: %v", err))
 	}
 	if !bytes.Equal(got, sent) {
