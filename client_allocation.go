@@ -236,20 +236,17 @@ func (a *Allocation) refresh() error {
 	res := stun.New()
 	req := stun.New()
 
-	fmt.Println("start refresh")
 	err := a.doRefresh(res, req)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("do refresh", err)
 	if res.Type == stun.NewType(stun.MethodRefresh, stun.ClassErrorResponse) {
 		var errCode stun.ErrorCodeAttribute
 		if codeErr := errCode.GetFrom(res); codeErr != nil {
 			return codeErr
 		}
 
-		fmt.Println("438", err)
 		if errCode.Code == stun.CodeStaleNonce {
 			var nonce stun.Nonce
 
@@ -267,7 +264,6 @@ func (a *Allocation) refresh() error {
 		}
 	}
 
-	fmt.Println("refresh success")
 	if res.Type != stun.NewType(stun.MethodChannelBind, stun.ClassSuccessResponse) {
 		return fmt.Errorf("unexpected response type %s", res.Type)
 	}
