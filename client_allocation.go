@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -15,14 +16,17 @@ import (
 // Allocation reflects TURN Allocation, which is basically an IP:Port on
 // TURN server allocated for client.
 type Allocation struct {
-	log       *zap.Logger
-	client    *Client
-	relayed   turn.RelayedAddress
-	reflexive stun.XORMappedAddress
-	perms     []*Permission // protected with client.mux
-	minBound  turn.ChannelNumber
-	integrity stun.MessageIntegrity
-	nonce     stun.Nonce
+	log         *zap.Logger
+	client      *Client
+	relayed     turn.RelayedAddress
+	reflexive   stun.XORMappedAddress
+	perms       []*Permission // protected with client.mux
+	minBound    turn.ChannelNumber
+	integrity   stun.MessageIntegrity
+	nonce       stun.Nonce
+	refreshRate time.Duration
+	ctx         context.Context
+	cancel      context.CancelFunc
 }
 
 func (a *Allocation) removePermission(p *Permission) {
@@ -63,13 +67,14 @@ func (c *Client) allocate(req, res *stun.Message) (*Allocation, error) {
 			return nil, err
 		}
 		a := &Allocation{
-			client:    c,
-			log:       c.log,
-			reflexive: reflexive,
-			relayed:   relayed,
-			minBound:  turn.MinChannelNumber,
-			integrity: c.integrity,
-			nonce:     nonce,
+			client:      c,
+			log:         c.log,
+			reflexive:   reflexive,
+			relayed:     relayed,
+			minBound:    turn.MinChannelNumber,
+			integrity:   c.integrity,
+			nonce:       nonce,
+			refreshRate: c.refreshRate,
 		}
 		c.alloc = a
 		return a, nil
@@ -131,7 +136,26 @@ func (c *Client) Allocate() (*Allocation, error) {
 	); reqErr != nil {
 		return nil, reqErr
 	}
-	return c.allocate(req, res)
+	a, err := c.allocate(req, res)
+	if err != nil {
+		return a, err
+	}
+
+	a.ctx, a.cancel = context.WithCancel(context.Background())
+	a.startRefreshLoop()
+
+	return a, nil
+}
+
+func (a *Allocation) Close() error {
+	a.cancel()
+	a.client.mux.Lock()
+	for _, perm := range a.perms {
+		perm.Close()
+	}
+	a.client.mux.Unlock()
+
+	return nil
 }
 
 func (a *Allocation) allocate(peer turn.PeerAddress) error {
@@ -167,6 +191,7 @@ func (a *Allocation) allocate(peer turn.PeerAddress) error {
 		}
 		return err
 	}
+
 	return nil
 }
 
@@ -196,4 +221,96 @@ func (a *Allocation) Create(ip net.IP) (*Permission, error) {
 	a.perms = append(a.perms, p)
 	a.client.mux.Unlock()
 	return p, nil
+}
+
+func (a *Allocation) startRefreshLoop() {
+	a.startLoop(func() {
+		if err := a.refresh(); err != nil {
+			a.log.Error("failed to refresh permission", zap.Error(err))
+		}
+		a.log.Debug("permission refreshed")
+	})
+}
+
+func (a *Allocation) refresh() error {
+	res := stun.New()
+	req := stun.New()
+
+	err := a.doRefresh(res, req)
+	if err != nil {
+		return err
+	}
+
+	if res.Type == stun.NewType(stun.MethodRefresh, stun.ClassErrorResponse) {
+		var errCode stun.ErrorCodeAttribute
+		if codeErr := errCode.GetFrom(res); codeErr != nil {
+			return codeErr
+		}
+
+		if errCode.Code == stun.CodeStaleNonce {
+			var nonce stun.Nonce
+
+			if nonceErr := nonce.GetFrom(res); nonceErr != nil {
+				return nonceErr
+			}
+			a.nonce = nonce
+			fmt.Println("new nonce", nonce)
+			res = stun.New()
+			req = stun.New()
+			err = a.doRefresh(res, req)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if res.Type != stun.NewType(stun.MethodChannelBind, stun.ClassSuccessResponse) {
+		return fmt.Errorf("unexpected response type %s", res.Type)
+	}
+	// Success.
+	return nil
+}
+
+func (a *Allocation) doRefresh(res, req *stun.Message) error {
+
+	req.TransactionID = stun.NewTransactionID()
+	req.Type = stun.NewType(stun.MethodRefresh, stun.ClassRequest)
+	req.WriteHeader()
+	setters := make([]stun.Setter, 0, 10)
+	if len(a.integrity) > 0 {
+		// Applying auth.
+		setters = append(setters,
+			a.nonce, a.client.username, a.client.realm, a.integrity, turn.Lifetime{
+				Duration: a.refreshRate,
+			},
+		)
+	}
+	setters = append(setters, stun.Fingerprint)
+	for _, s := range setters {
+		if setErr := s.AddTo(req); setErr != nil {
+			return setErr
+		}
+	}
+	if doErr := a.client.do(req, res); doErr != nil {
+		return doErr
+	}
+
+	return nil
+}
+
+func (a *Allocation) startLoop(f func()) {
+	if a.refreshRate == 0 {
+		return
+	}
+	go func() {
+		ticker := time.NewTicker(a.refreshRate)
+		for {
+			select {
+			case <-ticker.C:
+				f()
+			case <-a.ctx.Done():
+				return
+			}
+		}
+	}()
 }
