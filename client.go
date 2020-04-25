@@ -154,7 +154,6 @@ func (c *Client) stunHandler(e stun.Event) {
 				c.log.Error("failed to write", zap.Error(err))
 			}
 		}
-
 	}
 	c.mux.RUnlock()
 }

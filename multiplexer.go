@@ -23,8 +23,10 @@ type multiplexer struct {
 	dataL, dataR net.Conn
 }
 
+const packetSize = 1500
+
 func newMultiplexer(conn net.Conn, log *zap.Logger) *multiplexer {
-	m := &multiplexer{conn: conn, capacity: 1500, log: log}
+	m := &multiplexer{conn: conn, capacity: packetSize, log: log}
 	m.stunL, m.stunR = net.Pipe()
 	m.turnL, m.turnR = net.Pipe()
 	m.dataL, m.dataR = net.Pipe()

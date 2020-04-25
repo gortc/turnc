@@ -18,7 +18,7 @@ var (
 	)
 	peer = flag.String("peer",
 		"localhost:56780",
-		"peer addres",
+		"peer address",
 	)
 	username = flag.String("u", "user", "username")
 	password = flag.String("p", "secret", "password")
@@ -42,9 +42,9 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		c, err := net.ListenUDP("udp", laddr)
-		if err != nil {
-			panic(err)
+		c, _ := net.ListenUDP("udp", laddr)
+		if c == nil {
+			panic(c)
 		}
 		logger.Infof("listening as echo server %s", c.LocalAddr())
 		for {

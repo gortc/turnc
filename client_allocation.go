@@ -42,7 +42,7 @@ func (a *Allocation) removePermission(p *Permission) {
 	a.client.mux.Unlock()
 }
 
-var errUnauthorised = errors.New("unauthorised")
+var errUnauthorised = errors.New("unauthorized")
 
 // allocate expects client.mux locked.
 func (c *Client) allocate(req, res *stun.Message) (*Allocation, error) {
@@ -195,7 +195,7 @@ func (a *Allocation) allocate(peer turn.PeerAddress) error {
 	return nil
 }
 
-// Relayed returns the relayed address for the allocation
+// Relayed returns the relayed address for the allocation.
 func (a *Allocation) Relayed() turn.RelayedAddress {
 	return a.relayed
 }
