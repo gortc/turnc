@@ -226,9 +226,9 @@ func (a *Allocation) Create(ip net.IP) (*Permission, error) {
 func (a *Allocation) startRefreshLoop() {
 	a.startLoop(func() {
 		if err := a.refresh(); err != nil {
-			a.log.Error("failed to refresh permission", zap.Error(err))
+			a.log.Error("failed to refresh allocation", zap.Error(err))
 		}
-		a.log.Debug("permission refreshed")
+		a.log.Debug("allocation refreshed")
 	})
 }
 
@@ -254,7 +254,6 @@ func (a *Allocation) refresh() error {
 				return nonceErr
 			}
 			a.nonce = nonce
-			fmt.Println("new nonce", nonce)
 			res = stun.New()
 			req = stun.New()
 			err = a.doRefresh(res, req)
@@ -264,7 +263,7 @@ func (a *Allocation) refresh() error {
 		}
 	}
 
-	if res.Type != stun.NewType(stun.MethodChannelBind, stun.ClassSuccessResponse) {
+	if res.Type != stun.NewType(stun.MethodRefresh, stun.ClassSuccessResponse) {
 		return fmt.Errorf("unexpected response type %s", res.Type)
 	}
 	// Success.
@@ -272,7 +271,6 @@ func (a *Allocation) refresh() error {
 }
 
 func (a *Allocation) doRefresh(res, req *stun.Message) error {
-
 	req.TransactionID = stun.NewTransactionID()
 	req.Type = stun.NewType(stun.MethodRefresh, stun.ClassRequest)
 	req.WriteHeader()

@@ -385,6 +385,7 @@ func TestPermission(t *testing.T) {
 					found = true
 				}
 				if !found {
+					// TODO(ernado): Flaky?
 					t.Error("error not logged")
 				}
 			})
@@ -555,6 +556,13 @@ func TestPermission(t *testing.T) {
 					}
 					switch m.Type {
 					case stun.NewType(stun.MethodCreatePermission, stun.ClassRequest):
+						f(stun.Event{
+							Message: stun.MustBuild(m, stun.NewType(m.Type.Method, stun.ClassSuccessResponse),
+								integrity,
+								stun.Fingerprint,
+							),
+						})
+					case stun.NewType(stun.MethodRefresh, stun.ClassRequest):
 						f(stun.Event{
 							Message: stun.MustBuild(m, stun.NewType(m.Type.Method, stun.ClassSuccessResponse),
 								integrity,
