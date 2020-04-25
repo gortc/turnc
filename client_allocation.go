@@ -300,6 +300,7 @@ func (a *Allocation) startLoop(f func()) {
 	if a.refreshRate == 0 {
 		return
 	}
+
 	go func() {
 		ticker := time.NewTicker(a.refreshRate)
 		for {
