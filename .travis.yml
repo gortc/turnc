@@ -5,7 +5,7 @@ sudo: false
 env:
   global:
     - GO111MODULE=on
-    - GOLANGCI_VER=v1.16.0
+    - GOLANGCI_VER=v1.25.0
 
 go:
   - stable
@@ -13,7 +13,7 @@ go:
 install: true
 
 before_script:
-  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | bash -s -- -b $GOPATH/bin $GOLANGCI_VER
+  - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | bash -s -- -b $GOPATH/bin $GOLANGCI_VER
 
 script:
   - make test
