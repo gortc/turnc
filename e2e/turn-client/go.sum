@@ -51,4 +51,6 @@ gortc.io/stun v1.21.0/go.mod h1:XD5lpONVyjvV3BgOyJFNo0iv6R2oZB4L+weMqxts+zg=
 gortc.io/stun v1.21.1/go.mod h1:XD5lpONVyjvV3BgOyJFNo0iv6R2oZB4L+weMqxts+zg=
 gortc.io/turn v0.10.0 h1:K+xLxzvTFqIRQCfixAZUMRChmmasZAdn7yJNDl22E+s=
 gortc.io/turn v0.10.0/go.mod h1:C5yO0WYgZj1fTGRKRJVyotcdDDdAUyg5MTI7re5cHuI=
+gortc.io/turnc v0.2.0 h1:Gj1GTDE0dUuizYEGN8Hs0fGDJBQetqRsTeLMuzykrKg=
+gortc.io/turnc v0.2.0/go.mod h1:Y27swRjXbt4a6VJGsK0EzX6uebwygFymdT6tFuuyAvc=
 honnef.co/go/tools v0.0.1-2019.2.3/go.mod h1:a3bituU0lyd329TUQxRnasdCoJDkEUEAqEt0JzvZhAg=
